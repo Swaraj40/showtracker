@@ -22,6 +22,7 @@ export type TMDBShowDetails = TMDBShow & {
   number_of_episodes: number
   number_of_seasons: number
   status: string
+  episode_run_time: number[]
   seasons: {
     id: number
     name: string
@@ -42,6 +43,21 @@ export type TMDBEpisode = {
   air_date: string
   still_path: string | null
   vote_average: number
+}
+
+export type TMDBMovie = {
+  id: number
+  title: string
+  overview: string
+  poster_path: string | null
+  backdrop_path: string | null
+  release_date: string
+  vote_average: number
+}
+
+export type TMDBMovieDetails = TMDBMovie & {
+  runtime: number
+  status: string
 }
 
 // Fallback TVMaze mapper
@@ -99,6 +115,7 @@ export async function getShowDetails(id: string | number): Promise<TMDBShowDetai
       number_of_episodes: 0,
       number_of_seasons: data._embedded?.seasons?.length || 0,
       status: data.status,
+      episode_run_time: [data.averageRuntime || data.runtime || 45],
       seasons: (data._embedded?.seasons || []).map((s: any) => ({
         id: s.id,
         name: s.name || `Season ${s.number}`,
@@ -143,4 +160,36 @@ export async function getSeasonDetails(showId: string | number, seasonNumber: nu
   if (!res.ok) throw new Error('Failed to fetch season details')
   const data = await res.json()
   return data.episodes || []
+}
+
+export async function getTrendingMovies(): Promise<TMDBMovie[]> {
+  if (!process.env.TMDB_API_KEY) return []
+  const res = await fetch(`${TMDB_BASE_URL}/trending/movie/week`, {
+    headers: getHeaders(),
+    next: { revalidate: 86400 }
+  })
+  if (!res.ok) throw new Error('Failed to fetch trending movies')
+  const data = await res.json()
+  return data.results || []
+}
+
+export async function getUpcomingMovies(): Promise<TMDBMovie[]> {
+  if (!process.env.TMDB_API_KEY) return []
+  const res = await fetch(`${TMDB_BASE_URL}/movie/upcoming`, {
+    headers: getHeaders(),
+    next: { revalidate: 86400 }
+  })
+  if (!res.ok) throw new Error('Failed to fetch upcoming movies')
+  const data = await res.json()
+  return data.results || []
+}
+
+export async function getMovieDetails(id: string | number): Promise<TMDBMovieDetails> {
+  if (!process.env.TMDB_API_KEY) throw new Error('No API key')
+  const res = await fetch(`${TMDB_BASE_URL}/movie/${id}`, {
+    headers: getHeaders(),
+    next: { revalidate: 86400 }
+  })
+  if (!res.ok) throw new Error('Failed to fetch movie details')
+  return res.json()
 }

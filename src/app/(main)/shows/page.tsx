@@ -1,11 +1,14 @@
 import { createClient } from '@/utils/supabase/server'
-import { getShowDetails } from '@/lib/tmdb'
-import { ShowCard } from '@/components/ShowCard'
+import { getShowDetails, getSeasonDetails } from '@/lib/tmdb'
+import { NextEpisodeRow } from './NextEpisodeRow'
 import { redirect } from 'next/navigation'
 
 export const dynamic = "force-dynamic"
 
-export default async function ShowsPage() {
+export default async function ShowsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const p = await searchParams;
+  const tab = p.tab || 'watchlist'
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -31,41 +34,58 @@ export default async function ShowsPage() {
     )
   }
 
-  // Get user's watched episodes counts per show
+  // Get user's watched episodes
   const { data: watchedEpisodes } = await supabase
     .from('user_episodes')
-    .select('show_id')
+    .select('show_id, season_number, episode_number')
     .eq('user_id', user.id)
 
-  const watchedCountByShow = (watchedEpisodes || []).reduce((acc: any, curr) => {
-    acc[curr.show_id] = (acc[curr.show_id] || 0) + 1
-    return acc
-  }, {})
+  const watchedSet = new Set((watchedEpisodes || []).map(e => `${e.show_id}-${e.season_number}-${e.episode_number}`))
 
-  // Fetch show details from TMDB (can be slow if many shows, but fine for now)
-  const showsWithProgress = await Promise.all(
+  // Calculate Next Episode for each show
+  const showsWithNextEpisode = await Promise.all(
     userShows.map(async (tracked) => {
       try {
         const details = await getShowDetails(tracked.show_id)
         
-        // Count total aired episodes (excluding specials season 0)
-        let totalEpisodes = 0
-        details.seasons?.forEach(s => {
-          if (s.season_number > 0) totalEpisodes += s.episode_count
-        })
+        let nextSeason = -1
+        let nextEp = -1
 
-        // On TVMaze fallback, number_of_episodes is 0, so calculate manually
-        if (details.number_of_episodes === 0) {
-          details.number_of_episodes = totalEpisodes
+        // Find the earliest unwatched episode
+        for (const season of details.seasons || []) {
+          if (season.season_number === 0) continue // skip specials
+
+          for (let ep = 1; ep <= season.episode_count; ep++) {
+            if (!watchedSet.has(`${details.id}-${season.season_number}-${ep}`)) {
+              nextSeason = season.season_number
+              nextEp = ep
+              break
+            }
+          }
+          if (nextSeason !== -1) break
         }
 
-        const total = details.number_of_episodes || totalEpisodes
-        const watched = watchedCountByShow[tracked.show_id] || 0
+        if (nextSeason === -1) {
+          return null // Show is completed
+        }
+
+        // Fetch episode name (optional, but nice)
+        let epName = ''
+        try {
+          const seasonDetails = await getSeasonDetails(details.id, nextSeason)
+          const targetEp = seasonDetails.find(e => e.episode_number === nextEp)
+          if (targetEp) epName = targetEp.name
+        } catch (e) {
+          // ignore error if season details fail
+        }
 
         return {
-          ...details,
-          progress: { watched, total },
-          trackedStatus: tracked.status
+          show: details,
+          nextEpisode: {
+            season: nextSeason,
+            episode: nextEp,
+            name: epName
+          }
         }
       } catch (e) {
         return null
@@ -73,43 +93,45 @@ export default async function ShowsPage() {
     })
   )
 
-  const validShows = showsWithProgress.filter(Boolean) as any[]
-
-  // Group shows
-  const continueWatching = validShows.filter(s => s.progress.watched > 0 && s.progress.watched < s.progress.total)
-  const upToDate = validShows.filter(s => s.progress.watched > 0 && s.progress.watched >= s.progress.total)
-  const notStarted = validShows.filter(s => s.progress.watched === 0)
+  const activeShows = showsWithNextEpisode.filter(Boolean) as any[]
 
   return (
-    <div className="flex flex-col gap-8 pt-4 px-2">
-      <h1 className="text-2xl font-bold">My Shows</h1>
-      
-      {continueWatching.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold mb-3 text-gray-300 border-b border-[#1E1E1E] pb-2">Continue Watching</h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-            {continueWatching.map(show => <ShowCard key={show.id} show={show} progress={show.progress} />)}
-          </div>
-        </section>
-      )}
+    <div className="flex flex-col w-full pb-16">
+      {/* Top Nav Tabs */}
+      <div className="flex items-center w-full border-b border-[#1E1E1E]">
+        <a 
+          href="/shows?tab=watchlist" 
+          className={`flex-1 text-center py-4 text-xs font-bold tracking-widest ${tab === 'watchlist' ? 'text-white border-b-2 border-white' : 'text-gray-500'}`}
+        >
+          WATCH LIST
+        </a>
+        <a 
+          href="/shows?tab=upcoming" 
+          className={`flex-1 text-center py-4 text-xs font-bold tracking-widest ${tab === 'upcoming' ? 'text-white border-b-2 border-white' : 'text-gray-500'}`}
+        >
+          UPCOMING
+        </a>
+      </div>
 
-      {notStarted.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold mb-3 text-gray-300 border-b border-[#1E1E1E] pb-2">Not Started</h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-            {notStarted.map(show => <ShowCard key={show.id} show={show} progress={show.progress} />)}
-          </div>
-        </section>
-      )}
+      <div className="flex justify-between items-center p-4">
+        <div className="bg-[#1E1E1E] text-gray-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+          Watch Next
+        </div>
+        <button className="text-[#FFD54F]">
+          {/* Mock grid toggle icon */}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </button>
+      </div>
 
-      {upToDate.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold mb-3 text-gray-300 border-b border-[#1E1E1E] pb-2">Up to Date</h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-            {upToDate.map(show => <ShowCard key={show.id} show={show} progress={show.progress} />)}
-          </div>
-        </section>
-      )}
+      <div className="flex flex-col px-2">
+        {activeShows.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">You are completely up to date!</div>
+        ) : (
+          activeShows.map(({ show, nextEpisode }) => (
+            <NextEpisodeRow key={show.id} show={show} nextEpisode={nextEpisode} />
+          ))
+        )}
+      </div>
     </div>
   )
 }
