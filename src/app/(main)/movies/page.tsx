@@ -1,5 +1,6 @@
-import { getUpcomingMovies, TMDBMovie } from '@/lib/tmdb'
-import { ShowCard } from '@/components/ShowCard' // We can reuse ShowCard for movies if we pass correct props
+import { getUpcomingMovies, TMDBMovie, getMovieDetails } from '@/lib/tmdb'
+import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
 
 export const dynamic = "force-dynamic"
 
@@ -7,10 +8,36 @@ export default async function MoviesPage({ searchParams }: { searchParams: Promi
   const p = await searchParams;
   const tab = p.tab || 'watchlist'
 
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   // Fetch upcoming movies grouped by date
   let upcoming: TMDBMovie[] = []
+  let watchlistMovies: any[] = []
+
   if (tab === 'upcoming') {
     upcoming = await getUpcomingMovies()
+  } else if (tab === 'watchlist') {
+    if (!user) redirect('/login')
+
+    const { data: userMovies } = await supabase
+      .from('user_movies')
+      .select('movie_id')
+      .eq('user_id', user.id)
+      .eq('status', 'watchlist')
+
+    if (userMovies && userMovies.length > 0) {
+      watchlistMovies = await Promise.all(
+        userMovies.map(async (m) => {
+          try {
+            return await getMovieDetails(m.movie_id)
+          } catch (e) {
+            return null
+          }
+        })
+      )
+      watchlistMovies = watchlistMovies.filter(Boolean)
+    }
   }
 
   return (
@@ -39,11 +66,31 @@ export default async function MoviesPage({ searchParams }: { searchParams: Promi
       </div>
 
       {tab === 'watchlist' ? (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 px-4 text-center">
-          <p className="text-gray-400">Your Movie Watchlist is empty.</p>
-          <a href="/movies?tab=upcoming" className="bg-[#FFD54F] text-black px-6 py-2 rounded-full font-bold mt-4">
-            Find Movies
-          </a>
+        <div className="flex flex-col px-2">
+          {watchlistMovies.length === 0 ? (
+            <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 px-4 text-center">
+              <p className="text-gray-400">Your Movie Watchlist is empty.</p>
+              <a href="/movies?tab=upcoming" className="bg-[#FFD54F] text-black px-6 py-2 rounded-full font-bold mt-4">
+                Find Movies
+              </a>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+              {watchlistMovies.map((movie) => (
+                <div key={movie.id} className="relative aspect-[2/3] rounded-md overflow-hidden bg-gray-900">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={movie.poster_path ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w342${movie.poster_path}`) : '/placeholder.jpg'} 
+                    alt={movie.title}
+                    className="w-full h-full object-cover opacity-90"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
+                    <span className="text-xs font-bold line-clamp-2">{movie.title}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-6 px-2">
@@ -59,7 +106,7 @@ export default async function MoviesPage({ searchParams }: { searchParams: Promi
               <div key={movie.id} className="relative aspect-[2/3] rounded-md overflow-hidden bg-gray-900">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
-                  src={movie.poster_path ? `https://image.tmdb.org/t/p/w342${movie.poster_path}` : '/placeholder.jpg'} 
+                  src={movie.poster_path ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w342${movie.poster_path}`) : '/placeholder.jpg'} 
                   alt={movie.title}
                   className="w-full h-full object-cover"
                 />

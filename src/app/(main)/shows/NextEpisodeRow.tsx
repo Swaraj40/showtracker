@@ -10,7 +10,7 @@ export function NextEpisodeRow({
   nextEpisode 
 }: { 
   show: TMDBShowDetails, 
-  nextEpisode: { season: number, episode: number, name?: string } 
+  nextEpisode: { season: number, episode: number, name?: string, episodesLeft?: number } 
 }) {
   const [loading, setLoading] = useState(false)
   const [isWatched, setIsWatched] = useState(false)
@@ -40,7 +40,12 @@ export function NextEpisodeRow({
               {show.name.toUpperCase()}
             </span>
           </div>
-          <span className="font-bold text-lg text-white">S{String(nextEpisode.season).padStart(2, '0')} | E{String(nextEpisode.episode).padStart(2, '0')}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-lg text-white">S{String(nextEpisode.season).padStart(2, '0')} | E{String(nextEpisode.episode).padStart(2, '0')}</span>
+            {nextEpisode.episodesLeft && nextEpisode.episodesLeft > 0 ? (
+              <span className="text-xs font-bold text-gray-400">+{nextEpisode.episodesLeft}</span>
+            ) : null}
+          </div>
           <span className="text-sm text-gray-400 line-clamp-1">{nextEpisode.name || `Episode ${nextEpisode.episode}`}</span>
           <span className="bg-[#FFD54F] text-black text-[10px] font-bold px-1.5 py-0.5 rounded w-fit mt-1">NEW</span>
         </div>

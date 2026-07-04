@@ -51,18 +51,21 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
         let nextSeason = -1
         let nextEp = -1
 
-        // Find the earliest unwatched episode
+        let totalUnwatched = 0
+
+        // Find the earliest unwatched episode and count remaining
         for (const season of details.seasons || []) {
           if (season.season_number === 0) continue // skip specials
 
           for (let ep = 1; ep <= season.episode_count; ep++) {
             if (!watchedSet.has(`${details.id}-${season.season_number}-${ep}`)) {
-              nextSeason = season.season_number
-              nextEp = ep
-              break
+              if (nextSeason === -1) {
+                nextSeason = season.season_number
+                nextEp = ep
+              }
+              totalUnwatched++
             }
           }
-          if (nextSeason !== -1) break
         }
 
         if (nextSeason === -1) {
@@ -84,7 +87,8 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
           nextEpisode: {
             season: nextSeason,
             episode: nextEp,
-            name: epName
+            name: epName,
+            episodesLeft: totalUnwatched - 1
           }
         }
       } catch (e) {
