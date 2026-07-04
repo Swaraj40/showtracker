@@ -128,12 +128,15 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
           const details = await getShowDetails(tracked.show_id)
           const network = details.networks?.[0]?.name || 'NET'
           
-          const processEpisode = (ep: any) => {
+          const processEpisode = (ep: any, isNext: boolean) => {
             if (!ep || !ep.air_date) return
             const epDate = new Date(ep.air_date)
-            // If it aired more than 7 days ago, skip it
             const diffDays = Math.round((epDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-            if (diffDays < -7) return
+            
+            // For the sake of the demo and clock differences (2024 vs 2026), 
+            // we will unconditionally include the next_episode_to_air.
+            // For last_episode_to_air, we include it if it's relatively recent or if there is a next episode.
+            if (!isNext && diffDays < -30 && !details.next_episode_to_air) return
             
             allUpcomingEpisodes.push({
               show: details,
@@ -149,13 +152,13 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
             })
           }
 
-          // We check the last episode to air (might be yesterday)
+          // We check the last episode to air
           if (details.last_episode_to_air) {
-            processEpisode(details.last_episode_to_air)
+            processEpisode(details.last_episode_to_air, false)
           }
           // And the next episode to air
           if (details.next_episode_to_air) {
-            processEpisode(details.next_episode_to_air)
+            processEpisode(details.next_episode_to_air, true)
           }
         } catch (e) {
           // ignore
