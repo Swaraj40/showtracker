@@ -36,7 +36,11 @@ export default async function LoginPage({
           Sign In
         </button>
         {params?.message && (
-          <p className="mt-4 p-4 bg-red-900/50 text-red-300 text-center rounded-md">
+          <p className={`mt-4 p-4 text-center rounded-md ${
+            params.message.includes('email') 
+              ? 'bg-green-900/50 text-green-300' 
+              : 'bg-red-900/50 text-red-300'
+          }`}>
             {params.message}
           </p>
         )}
