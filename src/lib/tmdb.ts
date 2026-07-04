@@ -193,3 +193,14 @@ export async function getMovieDetails(id: string | number): Promise<TMDBMovieDet
   if (!res.ok) throw new Error('Failed to fetch movie details')
   return res.json()
 }
+
+export async function searchMovies(query: string): Promise<TMDBMovie[]> {
+  if (!process.env.TMDB_API_KEY) return []
+  const res = await fetch(`${TMDB_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&include_adult=false`, {
+    headers: getHeaders(),
+    next: { revalidate: 3600 }
+  })
+  if (!res.ok) throw new Error('Failed to fetch movies')
+  const data = await res.json()
+  return data.results || []
+}
