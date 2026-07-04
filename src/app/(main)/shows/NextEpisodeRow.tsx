@@ -30,7 +30,7 @@ export function NextEpisodeRow({
       <div className="flex items-center gap-4 flex-1 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img 
-          src={show.poster_path ? `https://image.tmdb.org/t/p/w154${show.poster_path}` : '/placeholder.jpg'} 
+          src={show.poster_path ? (show.poster_path.startsWith('http') ? show.poster_path : `https://image.tmdb.org/t/p/w154${show.poster_path}`) : '/placeholder.jpg'} 
           alt={show.name} 
           className="w-16 h-24 object-cover rounded-md shadow-md"
         />
