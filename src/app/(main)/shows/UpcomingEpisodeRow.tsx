@@ -1,0 +1,69 @@
+'use client'
+
+import { useState } from 'react'
+import { TMDBShowDetails } from '@/lib/tmdb'
+import { Check } from 'lucide-react'
+import { toggleEpisode } from '../show/[id]/actions'
+
+export function UpcomingEpisodeRow({ 
+  show, 
+  episode 
+}: { 
+  show: TMDBShowDetails, 
+  episode: { season: number, episode: number, name?: string, airDate: string, network?: string, isAired: boolean, timeStr?: string } 
+}) {
+  const [loading, setLoading] = useState(false)
+  const [isWatched, setIsWatched] = useState(false)
+
+  const handleToggle = async () => {
+    if (loading) return
+    setLoading(true)
+    await toggleEpisode(show.id, episode.season, episode.episode, !isWatched)
+    setIsWatched(!isWatched)
+    setLoading(false)
+  }
+
+  // If the user watches it from the Upcoming tab, we could hide it or just show it checked.
+  // We'll hide it for consistency.
+  if (isWatched) return null 
+
+  return (
+    <div className="flex items-center justify-between py-3 border-b border-[#1E1E1E] transition-all cursor-pointer hover:bg-white/5">
+      <div className="flex items-center gap-4 flex-1 overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img 
+          src={show.poster_path ? (show.poster_path.startsWith('http') ? show.poster_path : `https://image.tmdb.org/t/p/w154${show.poster_path}`) : '/placeholder.jpg'} 
+          alt={show.name} 
+          className="w-16 h-24 object-cover rounded-md shadow-md"
+        />
+        <div className="flex flex-col gap-1 overflow-hidden">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold border border-gray-600 rounded-full px-2 py-0.5 text-gray-300 uppercase truncate max-w-full">
+              {show.name.toUpperCase()}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-lg text-white">S{String(episode.season).padStart(2, '0')} | E{String(episode.episode).padStart(2, '0')}</span>
+          </div>
+          <span className="text-sm text-gray-400 line-clamp-1">{episode.name || `Episode ${episode.episode}`}</span>
+          <span className="bg-[#FFD54F] text-black text-[10px] font-bold px-1.5 py-0.5 rounded w-fit mt-1">NEW</span>
+        </div>
+      </div>
+      
+      {episode.isAired ? (
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+          disabled={loading}
+          className="shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors border-gray-600 text-transparent hover:border-[#FFD54F] ml-4 bg-[#1E1E1E]"
+        >
+          <Check size={16} strokeWidth={4} className={loading ? "animate-pulse" : ""} />
+        </button>
+      ) : (
+        <div className="flex flex-col items-end shrink-0 ml-4">
+          <span className="text-xs font-bold text-white">{episode.timeStr || '8:00 pm'}</span>
+          <span className="text-[10px] font-bold text-gray-400 uppercase">{episode.network || 'NET'}</span>
+        </div>
+      )}
+    </div>
+  )
+}

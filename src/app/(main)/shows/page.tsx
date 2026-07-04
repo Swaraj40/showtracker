@@ -1,9 +1,33 @@
 import { createClient } from '@/utils/supabase/server'
-import { getShowDetails, getSeasonDetails } from '@/lib/tmdb'
+import { getShowDetails } from '@/lib/tmdb'
 import { NextEpisodeRow } from './NextEpisodeRow'
+import { UpcomingEpisodeRow } from './UpcomingEpisodeRow'
 import { redirect } from 'next/navigation'
 
 export const dynamic = "force-dynamic"
+
+// Helper to format the grouping date
+function getRelativeDateLabel(dateStr: string) {
+  if (!dateStr) return 'TBA'
+  const target = new Date(dateStr)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  const targetDate = new Date(target)
+  targetDate.setHours(0, 0, 0, 0)
+  
+  const diffDays = Math.round((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === -1) return 'YESTERDAY'
+  if (diffDays === 0) return 'TODAY'
+  if (diffDays === 1) return 'TOMORROW'
+  if (diffDays > 1 && diffDays < 7) {
+    const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
+    return days[target.getDay()]
+  }
+  
+  return target.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()
+}
 
 export default async function ShowsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const p = await searchParams;
@@ -34,63 +58,131 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
     )
   }
 
-  // Get user's watched episodes
-  const { data: watchedEpisodes } = await supabase
-    .from('user_episodes')
-    .select('show_id, season_number, episode_number')
-    .eq('user_id', user.id)
+  // Active trackable shows
+  const activeShows = userShows.filter(s => s.status !== 'completed' && s.status !== 'dropped')
 
-  const watchedSet = new Set((watchedEpisodes || []).map(e => `${e.show_id}-${e.season_number}-${e.episode_number}`))
+  let watchlistRenderData: any[] = []
+  let upcomingRenderGroups: { label: string, episodes: any[] }[] = []
 
-  // Calculate Next Episode for each show
-  const showsWithNextEpisode = await Promise.all(
-    userShows.map(async (tracked) => {
-      try {
-        const details = await getShowDetails(tracked.show_id)
-        
-        let nextSeason = -1
-        let nextEp = -1
+  if (tab === 'watchlist') {
+    // Get user's watched episodes
+    const { data: watchedEpisodes } = await supabase
+      .from('user_episodes')
+      .select('show_id, season_number, episode_number')
+      .eq('user_id', user.id)
 
-        let totalUnwatched = 0
+    const watchedSet = new Set((watchedEpisodes || []).map(e => `${e.show_id}-${e.season_number}-${e.episode_number}`))
 
-        // Find the earliest unwatched episode and count remaining
-        for (const season of details.seasons || []) {
-          if (season.season_number === 0) continue // skip specials
+    // Calculate Next Episode for each show
+    const showsWithNextEpisode = await Promise.all(
+      activeShows.map(async (tracked) => {
+        try {
+          const details = await getShowDetails(tracked.show_id)
+          
+          let nextSeason = -1
+          let nextEp = -1
+          let totalUnwatched = 0
 
-          for (let ep = 1; ep <= season.episode_count; ep++) {
-            if (!watchedSet.has(`${details.id}-${season.season_number}-${ep}`)) {
-              if (nextSeason === -1) {
-                nextSeason = season.season_number
-                nextEp = ep
+          for (const season of details.seasons || []) {
+            if (season.season_number === 0) continue // skip specials
+
+            for (let ep = 1; ep <= season.episode_count; ep++) {
+              if (!watchedSet.has(`${details.id}-${season.season_number}-${ep}`)) {
+                if (nextSeason === -1) {
+                  nextSeason = season.season_number
+                  nextEp = ep
+                }
+                totalUnwatched++
               }
-              totalUnwatched++
             }
           }
-        }
 
-        if (nextSeason === -1) {
-          return null // Show is completed
-        }
-
-        // Removed N+1 getSeasonDetails call to vastly improve performance.
-        let epName = ''
-
-        return {
-          show: details,
-          nextEpisode: {
-            season: nextSeason,
-            episode: nextEp,
-            name: epName,
-            episodesLeft: totalUnwatched - 1
+          if (nextSeason === -1) {
+            return null // Show is completed
           }
-        }
-      } catch (e) {
-        return null
-      }
-    })
-  )
 
-  const activeShows = showsWithNextEpisode.filter(Boolean) as any[]
+          return {
+            show: details,
+            nextEpisode: {
+              season: nextSeason,
+              episode: nextEp,
+              name: '',
+              episodesLeft: totalUnwatched - 1
+            }
+          }
+        } catch (e) {
+          return null
+        }
+      })
+    )
+    watchlistRenderData = showsWithNextEpisode.filter(Boolean) as any[]
+  } else {
+    // Upcoming Tab Logic
+    const allUpcomingEpisodes: any[] = []
+    const today = new Date()
+    today.setHours(0,0,0,0)
+
+    await Promise.all(
+      activeShows.map(async (tracked) => {
+        try {
+          const details = await getShowDetails(tracked.show_id)
+          const network = details.networks?.[0]?.name || 'NET'
+          
+          const processEpisode = (ep: any) => {
+            if (!ep || !ep.air_date) return
+            const epDate = new Date(ep.air_date)
+            // If it aired more than 7 days ago, skip it
+            const diffDays = Math.round((epDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+            if (diffDays < -7) return
+            
+            allUpcomingEpisodes.push({
+              show: details,
+              episode: {
+                season: ep.season_number,
+                episode: ep.episode_number,
+                name: ep.name,
+                airDate: ep.air_date,
+                network,
+                isAired: diffDays < 0,
+                timeStr: '8:00 pm' // Mock time since TMDB doesn't easily provide local air times
+              }
+            })
+          }
+
+          // We check the last episode to air (might be yesterday)
+          if (details.last_episode_to_air) {
+            processEpisode(details.last_episode_to_air)
+          }
+          // And the next episode to air
+          if (details.next_episode_to_air) {
+            processEpisode(details.next_episode_to_air)
+          }
+        } catch (e) {
+          // ignore
+        }
+      })
+    )
+
+    // Deduplicate (in case last and next are somehow the same, or just to be safe)
+    const uniqueEpisodes = new Map()
+    allUpcomingEpisodes.forEach(item => {
+      uniqueEpisodes.set(`${item.show.id}-${item.episode.season}-${item.episode.episode}`, item)
+    })
+
+    const sortedEpisodes = Array.from(uniqueEpisodes.values()).sort((a, b) => {
+      return new Date(a.episode.airDate).getTime() - new Date(b.episode.airDate).getTime()
+    })
+
+    // Group by Date Label
+    const grouped = new Map<string, any[]>()
+    sortedEpisodes.forEach(item => {
+      const label = getRelativeDateLabel(item.episode.airDate)
+      if (!grouped.has(label)) grouped.set(label, [])
+      grouped.get(label)!.push(item)
+    })
+
+    upcomingRenderGroups = Array.from(grouped.entries()).map(([label, episodes]) => ({ label, episodes }))
+  }
 
   return (
     <div className="flex flex-col w-full pb-16">
@@ -111,9 +203,13 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
       </div>
 
       <div className="flex justify-between items-center p-4">
-        <div className="bg-[#1E1E1E] text-gray-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase">
-          Watch Next
-        </div>
+        {tab === 'watchlist' ? (
+          <div className="bg-[#1E1E1E] text-gray-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+            Watch Next
+          </div>
+        ) : (
+          <div /> // Placeholder for spacing
+        )}
         <button className="text-[#FFD54F]">
           {/* Mock grid toggle icon */}
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
@@ -121,12 +217,31 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
       </div>
 
       <div className="flex flex-col px-2">
-        {activeShows.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">You are completely up to date!</div>
+        {tab === 'watchlist' ? (
+          watchlistRenderData.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">You are completely up to date!</div>
+          ) : (
+            watchlistRenderData.map(({ show, nextEpisode }) => (
+              <NextEpisodeRow key={show.id} show={show} nextEpisode={nextEpisode} />
+            ))
+          )
         ) : (
-          activeShows.map(({ show, nextEpisode }) => (
-            <NextEpisodeRow key={show.id} show={show} nextEpisode={nextEpisode} />
-          ))
+          upcomingRenderGroups.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">No upcoming episodes for your shows.</div>
+          ) : (
+            upcomingRenderGroups.map((group) => (
+              <div key={group.label} className="flex flex-col mb-4">
+                <div className="flex justify-center mb-2">
+                  <span className="bg-[#555555] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+                    {group.label}
+                  </span>
+                </div>
+                {group.episodes.map(({ show, episode }) => (
+                  <UpcomingEpisodeRow key={`${show.id}-${episode.season}-${episode.episode}`} show={show} episode={episode} />
+                ))}
+              </div>
+            ))
+          )
         )}
       </div>
     </div>
