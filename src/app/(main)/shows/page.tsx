@@ -72,15 +72,8 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
           return null // Show is completed
         }
 
-        // Fetch episode name (optional, but nice)
+        // Removed N+1 getSeasonDetails call to vastly improve performance.
         let epName = ''
-        try {
-          const seasonDetails = await getSeasonDetails(details.id, nextSeason)
-          const targetEp = seasonDetails.find(e => e.episode_number === nextEp)
-          if (targetEp) epName = targetEp.name
-        } catch (e) {
-          // ignore error if season details fail
-        }
 
         return {
           show: details,

@@ -34,28 +34,8 @@ export default async function ProfilePage() {
 
   const episodeCount = episodes?.length || 0
   
-  // Compute TV Time by fetching show runtimes
-  let totalTvMinutes = 0
-  if (episodes && episodes.length > 0) {
-    // Group by show_id
-    const showCounts = episodes.reduce((acc: any, curr) => {
-      acc[curr.show_id] = (acc[curr.show_id] || 0) + 1
-      return acc
-    }, {})
-
-    // Fetch details for each show
-    const showIds = Object.keys(showCounts)
-    await Promise.all(showIds.map(async (id) => {
-      try {
-        const details = await getShowDetails(id)
-        const avgRuntime = details.episode_run_time?.[0] || 45
-        totalTvMinutes += avgRuntime * showCounts[id]
-      } catch (e) {
-        // Fallback if TMDB fails
-        totalTvMinutes += 45 * showCounts[id]
-      }
-    }))
-  }
+  // Compute TV Time (defaulting to 45 mins per episode to prevent massive TMDB API rate limiting)
+  let totalTvMinutes = episodeCount * 45
 
   // Format TV Time
   const tvMonths = Math.floor(totalTvMinutes / (60 * 24 * 30))
