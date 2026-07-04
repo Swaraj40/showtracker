@@ -2,38 +2,64 @@
 
 import { TMDBShow } from '@/lib/tmdb'
 import Link from 'next/link'
-import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import { useDevice } from '@/hooks/useDevice'
+import { Check } from 'lucide-react'
 
-export function ShowCard({ show }: { show: TMDBShow }) {
-  const { isTV } = useDevice()
-  const { ref, focused } = useFocusable()
+interface ShowCardProps {
+  show: TMDBShow | any;
+  progress?: {
+    watched: number;
+    total: number;
+  }
+}
 
+export function ShowCard({ show, progress }: ShowCardProps) {
   const posterUrl = show.poster_path 
     ? (show.poster_path.startsWith('http') ? show.poster_path : `https://image.tmdb.org/t/p/w500${show.poster_path}`)
     : '/placeholder.jpg'
 
+  const isCompleted = progress && progress.watched >= progress.total && progress.total > 0;
+  const progressPercent = progress && progress.total > 0 ? (progress.watched / progress.total) * 100 : 0;
+
   return (
     <Link 
-      href={`/show/${show.id}`}
-      // @ts-ignore
-      ref={isTV ? ref : null}
-      className={`group relative flex flex-col gap-2 rounded-xl overflow-hidden transition-all duration-300 ease-out outline-none ${
-        focused ? 'scale-110 shadow-2xl z-10 ring-4 ring-white' : 'hover:scale-105 opacity-90 hover:opacity-100'
-      }`}
+      href={`/show/${show.id || show.show_id}`}
+      className="relative flex flex-col rounded-md overflow-hidden transition-transform active:scale-95"
     >
-      <div className="relative aspect-[2/3] w-full bg-gray-800 rounded-xl overflow-hidden">
+      <div className="relative aspect-[2/3] w-full bg-[#1E1E1E]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img 
           src={posterUrl} 
           alt={show.name}
           className="object-cover w-full h-full"
+          loading="lazy"
         />
-        <div className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-3 transition-opacity ${focused || !isTV ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-          <h3 className="text-white font-bold text-sm line-clamp-2">{show.name}</h3>
-          <p className="text-xs text-gray-300">{new Date(show.first_air_date).getFullYear()}</p>
-        </div>
+        
+        {/* TV Time Progress Bar */}
+        {progress && !isCompleted && (
+          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gray-800/80">
+            <div 
+              className="h-full bg-[#FFD54F]" 
+              style={{ width: `${Math.min(100, progressPercent)}%` }}
+            />
+          </div>
+        )}
+
+        {/* TV Time Checkmark Overlay for completed shows */}
+        {isCompleted && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="bg-[#FFD54F] rounded-full p-2 text-black shadow-lg">
+              <Check size={28} strokeWidth={3} />
+            </div>
+          </div>
+        )}
       </div>
+      
+      {/* Title only shows if we don't have progress (e.g. Discover page) */}
+      {!progress && (
+        <div className="p-2 truncate text-xs font-semibold text-center text-gray-200">
+          {show.name}
+        </div>
+      )}
     </Link>
   )
 }

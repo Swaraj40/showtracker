@@ -40,54 +40,60 @@ export default async function ShowPage({ params }: { params: Promise<{ id: strin
   const backdropUrl = show.backdrop_path ? (show.backdrop_path.startsWith('http') ? show.backdrop_path : `https://image.tmdb.org/t/p/original${show.backdrop_path}`) : ''
 
   return (
-    <div className="flex flex-col gap-8 pb-12">
+    <div className="flex flex-col pb-12 w-full">
       {/* Hero section */}
-      <div className="relative w-full h-[40vh] md:h-[60vh] rounded-3xl overflow-hidden shadow-2xl">
+      <div className="relative w-full h-[50vh] min-h-[400px] flex flex-col justify-end">
         {backdropUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={backdropUrl} alt={show.name} className="absolute inset-0 w-full h-full object-cover opacity-40" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent flex items-end p-8">
-          <div className="flex flex-col md:flex-row gap-8 items-end w-full">
+          <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={posterUrl} alt={show.name} className="w-32 md:w-48 rounded-xl shadow-2xl hidden md:block" />
-            <div className="flex-1 flex flex-col gap-4">
-              <h1 className="text-4xl md:text-6xl font-black">{show.name}</h1>
-              <p className="text-gray-300 line-clamp-3 text-lg max-w-3xl">{show.overview}</p>
-              <div className="flex items-center gap-4 mt-2">
-                <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-sm font-semibold border border-blue-600/30">
-                  {show.status}
-                </span>
-                <span className="text-gray-400 text-sm">{show.first_air_date}</span>
-              </div>
-              
-              {user ? (
-                <div className="mt-4">
-                  <TrackButton showId={show.id} currentStatus={currentStatus} />
-                </div>
-              ) : (
-                <p className="mt-4 text-sm text-gray-400">Log in to track this show</p>
-              )}
-            </div>
+            <img src={backdropUrl} alt={show.name} className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/80 to-transparent" />
+          </>
+        )}
+        
+        <div className="relative z-10 px-4 pb-6 flex flex-col items-center text-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={posterUrl} alt={show.name} className="w-32 rounded-md shadow-2xl border border-white/10" />
+          <h1 className="text-3xl font-black mt-2">{show.name}</h1>
+          <div className="flex items-center gap-2 text-sm text-gray-300 font-semibold">
+            <span>{new Date(show.first_air_date).getFullYear()}</span>
+            <span>•</span>
+            <span className="text-[#FFD54F]">{show.status}</span>
           </div>
         </div>
       </div>
 
-      {/* Seasons */}
-      {show.seasons.filter(s => s.season_number > 0).map((season) => (
-        <div key={season.id} className="flex flex-col gap-4 mt-8">
-          <h2 className="text-2xl font-bold border-b border-gray-800 pb-2">Season {season.season_number}</h2>
-          <div className="flex flex-col gap-2">
-            <EpisodeItem 
-              showId={show.id} 
-              seasonNumber={season.season_number} 
-              episodeCount={season.episode_count}
-              watchedEpisodes={Array.from(watchedEpisodes)}
-              isLoggedIn={!!user}
-            />
-          </div>
+      <div className="px-4 flex flex-col gap-6 -mt-2">
+        {user ? (
+          <TrackButton showId={show.id} currentStatus={currentStatus} />
+        ) : (
+          <a href="/login" className="w-full flex items-center justify-center gap-2 py-3 bg-[#FFD54F] text-black rounded-full font-bold">
+            Log in to track this show
+          </a>
+        )}
+
+        <p className="text-gray-300 text-sm leading-relaxed">{show.overview}</p>
+
+        {/* Seasons */}
+        <div className="flex flex-col gap-6 mt-4">
+          {show.seasons.filter(s => s.season_number > 0).map((season) => (
+            <div key={season.id} className="flex flex-col">
+              <h2 className="text-xl font-bold bg-[#1E1E1E] px-4 py-3 rounded-t-lg border-b border-[#2A2A2A]">
+                Season {season.season_number}
+              </h2>
+              <div className="bg-[#121212] px-4 rounded-b-lg flex flex-col">
+                <EpisodeItem 
+                  showId={show.id} 
+                  seasonNumber={season.season_number} 
+                  episodeCount={season.episode_count}
+                  watchedEpisodes={Array.from(watchedEpisodes)}
+                  isLoggedIn={!!user}
+                />
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   )
 }

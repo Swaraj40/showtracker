@@ -7,10 +7,10 @@ export default async function Home() {
   const trending = await getTrendingShows()
   
   return (
-    <div className="flex flex-col gap-8">
-      <h1 className="text-3xl font-bold">Trending Shows</h1>
+    <div className="flex flex-col gap-6 pt-4">
+      <h1 className="text-2xl font-bold px-2">Discover</h1>
       
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
         {trending.map((show) => (
           <ShowCard key={show.id} show={show} />
         ))}

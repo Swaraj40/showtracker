@@ -1,26 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* TV Time Dark Theme by default */
+  --background: #111111;
+  --foreground: #ffffff;
+  --surface: #1E1E1E;
+  --surface-hover: #2A2A2A;
+  
+  /* TV Time Yellow */
+  --tvtime-yellow: #FFD54F;
+  --tvtime-yellow-dark: #FFC107;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-primary: var(--tvtime-yellow);
+  --color-primary-dark: var(--tvtime-yellow-dark);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  /* Prevent bounce on iOS to feel more native */
+  overscroll-behavior-y: none;
 }

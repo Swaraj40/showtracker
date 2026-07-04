@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getSeasonDetails, TMDBEpisode } from '@/lib/tmdb'
 import { toggleEpisode } from './actions'
-import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import { useDevice } from '@/hooks/useDevice'
+import { Check } from 'lucide-react'
 
 export function EpisodeItem({ 
   showId, 
@@ -29,10 +28,10 @@ export function EpisodeItem({
     })
   }, [showId, seasonNumber])
 
-  if (loading) return <div className="text-gray-500 p-4">Loading episodes...</div>
+  if (loading) return <div className="text-gray-500 p-4 animate-pulse">Loading episodes...</div>
 
   return (
-    <>
+    <div className="flex flex-col">
       {episodes.map(ep => (
         <EpisodeRow 
           key={ep.id} 
@@ -42,14 +41,12 @@ export function EpisodeItem({
           isLoggedIn={isLoggedIn}
         />
       ))}
-    </>
+    </div>
   )
 }
 
 function EpisodeRow({ episode, showId, isWatched, isLoggedIn }: { episode: TMDBEpisode, showId: number, isWatched: boolean, isLoggedIn: boolean }) {
   const [loading, setLoading] = useState(false)
-  const { ref, focused } = useFocusable()
-  const { isTV } = useDevice()
 
   const handleToggle = async () => {
     if (!isLoggedIn || loading) return
@@ -60,27 +57,23 @@ function EpisodeRow({ episode, showId, isWatched, isLoggedIn }: { episode: TMDBE
 
   return (
     <div 
-      // @ts-ignore
-      ref={isTV ? ref : null}
       onClick={handleToggle}
-      className={`flex items-center justify-between p-4 bg-gray-900 rounded-xl transition-all cursor-pointer ${
-        focused ? 'ring-2 ring-white scale-[1.01] bg-gray-800' : 'hover:bg-gray-800'
-      } ${isWatched ? 'opacity-50' : ''}`}
+      className={`flex items-center justify-between py-3 border-b border-[#1E1E1E] transition-all cursor-pointer hover:bg-white/5`}
     >
-      <div className="flex flex-col gap-1">
-        <span className="font-bold text-lg">
+      <div className="flex flex-col gap-0.5 max-w-[80%]">
+        <span className="font-semibold text-[15px] leading-tight text-white line-clamp-1">
           {episode.episode_number}. {episode.name}
         </span>
-        <span className="text-sm text-gray-400">{episode.air_date}</span>
+        <span className="text-xs text-gray-400">{episode.air_date}</span>
       </div>
       {isLoggedIn && (
         <button 
           disabled={loading}
-          className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors ${
-            isWatched ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-600 text-transparent hover:border-blue-500'
+          className={`shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors ${
+            isWatched ? 'bg-[#FFD54F] border-[#FFD54F] text-black' : 'border-gray-600 text-transparent hover:border-[#FFD54F]'
           }`}
         >
-          ✓
+          <Check size={16} strokeWidth={4} />
         </button>
       )}
     </div>
