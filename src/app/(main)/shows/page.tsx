@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
-import { getShowDetails } from '@/lib/tmdb'
+import { getShowDetails, getSeasonDetails } from '@/lib/tmdb'
 import { NextEpisodeRow } from './NextEpisodeRow'
 import { UpcomingEpisodeRow } from './UpcomingEpisodeRow'
 import { redirect } from 'next/navigation'
@@ -159,6 +159,18 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
           // And the next episode to air
           if (details.next_episode_to_air) {
             processEpisode(details.next_episode_to_air, true)
+            
+            // Fetch the rest of the season to get ALL future episodes for this airing season
+            try {
+              const seasonData = await getSeasonDetails(details.id, details.next_episode_to_air.season_number)
+              for (const ep of seasonData) {
+                if (ep.episode_number > details.next_episode_to_air.episode_number && ep.air_date) {
+                  processEpisode(ep, true)
+                }
+              }
+            } catch (e) {
+              // Ignore if we can't fetch season details
+            }
           }
         } catch (e) {
           // ignore
