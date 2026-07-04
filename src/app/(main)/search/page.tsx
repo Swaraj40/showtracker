@@ -63,7 +63,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                       <a href={`/show/${show.id}`} className="absolute inset-0 z-10" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
-                        src={show.poster_path ? `https://image.tmdb.org/t/p/w342${show.poster_path}` : '/placeholder.jpg'} 
+                        src={show.poster_path ? (show.poster_path.startsWith('http') ? show.poster_path : `https://image.tmdb.org/t/p/w342${show.poster_path}`) : '/placeholder.jpg'} 
                         alt={show.name}
                         className="w-full h-full object-cover opacity-80"
                       />
@@ -90,7 +90,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                       {/* Note: Movie details page not yet implemented */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
-                        src={movie.poster_path ? `https://image.tmdb.org/t/p/w342${movie.poster_path}` : '/placeholder.jpg'} 
+                        src={movie.poster_path ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w342${movie.poster_path}`) : '/placeholder.jpg'} 
                         alt={movie.title}
                         className="w-full h-full object-cover opacity-80"
                       />
