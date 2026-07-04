@@ -1,0 +1,146 @@
+export const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
+
+const getHeaders = () => {
+  const apiKey = process.env.TMDB_API_KEY
+  return {
+    Authorization: `Bearer ${apiKey}`,
+    accept: 'application/json',
+  }
+}
+
+export type TMDBShow = {
+  id: number
+  name: string
+  overview: string
+  poster_path: string | null
+  backdrop_path: string | null
+  first_air_date: string
+  vote_average: number
+}
+
+export type TMDBShowDetails = TMDBShow & {
+  number_of_episodes: number
+  number_of_seasons: number
+  status: string
+  seasons: {
+    id: number
+    name: string
+    overview: string
+    poster_path: string
+    season_number: number
+    episode_count: number
+    air_date: string
+  }[]
+}
+
+export type TMDBEpisode = {
+  id: number
+  name: string
+  overview: string
+  episode_number: number
+  season_number: number
+  air_date: string
+  still_path: string | null
+  vote_average: number
+}
+
+// Fallback TVMaze mapper
+const tvMazeToTMDBShow = (show: any): TMDBShow => ({
+  id: show.id,
+  name: show.name,
+  overview: show.summary?.replace(/<[^>]*>?/gm, '') || '',
+  poster_path: show.image?.medium || null,
+  backdrop_path: show.image?.original || null,
+  first_air_date: show.premiered || '',
+  vote_average: show.rating?.average || 0
+})
+
+export async function searchShows(query: string): Promise<TMDBShow[]> {
+  if (!query) return []
+  
+  if (!process.env.TMDB_API_KEY) {
+    const res = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    return data.map((item: any) => tvMazeToTMDBShow(item.show));
+  }
+
+  const res = await fetch(`${TMDB_BASE_URL}/search/tv?query=${encodeURIComponent(query)}&include_adult=false`, {
+    headers: getHeaders(),
+    next: { revalidate: 3600 }
+  })
+  if (!res.ok) throw new Error('Failed to fetch shows')
+  const data = await res.json()
+  return data.results || []
+}
+
+export async function getTrendingShows(): Promise<TMDBShow[]> {
+  if (!process.env.TMDB_API_KEY) {
+    const res = await fetch(`https://api.tvmaze.com/shows`);
+    const data = await res.json();
+    return data.slice(0, 20).map(tvMazeToTMDBShow);
+  }
+
+  const res = await fetch(`${TMDB_BASE_URL}/trending/tv/week`, {
+    headers: getHeaders(),
+    next: { revalidate: 86400 } // cache for a day
+  })
+  if (!res.ok) throw new Error('Failed to fetch trending')
+  const data = await res.json()
+  return data.results || []
+}
+
+export async function getShowDetails(id: string | number): Promise<TMDBShowDetails> {
+  if (!process.env.TMDB_API_KEY) {
+    const res = await fetch(`https://api.tvmaze.com/shows/${id}?embed=seasons`);
+    const data = await res.json();
+    
+    return {
+      ...tvMazeToTMDBShow(data),
+      number_of_episodes: 0,
+      number_of_seasons: data._embedded?.seasons?.length || 0,
+      status: data.status,
+      seasons: (data._embedded?.seasons || []).map((s: any) => ({
+        id: s.id,
+        name: s.name || `Season ${s.number}`,
+        overview: s.summary?.replace(/<[^>]*>?/gm, '') || '',
+        poster_path: s.image?.medium || '',
+        season_number: s.number,
+        episode_count: s.episodeOrder || 10,
+        air_date: s.premiereDate || ''
+      }))
+    }
+  }
+
+  const res = await fetch(`${TMDB_BASE_URL}/tv/${id}?append_to_response=credits`, {
+    headers: getHeaders(),
+    next: { revalidate: 86400 }
+  })
+  if (!res.ok) throw new Error('Failed to fetch show details')
+  return res.json()
+}
+
+export async function getSeasonDetails(showId: string | number, seasonNumber: number): Promise<TMDBEpisode[]> {
+  if (!process.env.TMDB_API_KEY) {
+    const res = await fetch(`https://api.tvmaze.com/shows/${showId}/episodes`);
+    const data = await res.json();
+    const seasonEpisodes = data.filter((e: any) => e.season === seasonNumber);
+    return seasonEpisodes.map((e: any) => ({
+      id: e.id,
+      name: e.name,
+      overview: e.summary?.replace(/<[^>]*>?/gm, '') || '',
+      episode_number: e.number,
+      season_number: e.season,
+      air_date: e.airdate,
+      still_path: e.image?.medium || null,
+      vote_average: e.rating?.average || 0
+    }));
+  }
+
+  const res = await fetch(`${TMDB_BASE_URL}/tv/${showId}/season/${seasonNumber}`, {
+    headers: getHeaders(),
+    next: { revalidate: 86400 }
+  })
+  if (!res.ok) throw new Error('Failed to fetch season details')
+  const data = await res.json()
+  return data.episodes || []
+}
