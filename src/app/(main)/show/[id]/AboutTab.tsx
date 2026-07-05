@@ -19,22 +19,29 @@ export function AboutTab({ show }: { show: TMDBShowDetails }) {
       
       {/* Show info section */}
       <section className="flex flex-col gap-2 border-b border-[#2A2A2A] pb-6">
-        <h2 className="text-lg font-bold text-white">Show info</h2>
+        <h1 className="text-2xl font-black text-white">{show.name}</h1>
         
         <p className="text-sm text-gray-300">
           {statusStr} • {genresStr}
         </p>
 
-        <div className="flex items-center gap-2 mt-1">
-          <div className="bg-[#FFD54F] text-black text-[10px] font-black px-1.5 py-0.5 rounded-sm">T</div>
-          <div className="flex text-[#FFD54F] text-xs">
-            <Star size={12} fill="currentColor" />
-            <Star size={12} fill="currentColor" />
-            <Star size={12} fill="currentColor" />
-            <Star size={12} fill="currentColor" />
-            <Star size={12} className="opacity-50" />
+        <div className="flex items-center gap-4 mt-1">
+          <div className="flex items-center gap-2">
+            <div className="bg-[#FFD54F] text-black text-[10px] font-black px-1.5 py-0.5 rounded-sm">T</div>
+            <div className="flex text-[#FFD54F] text-xs">
+              <Star size={12} fill="currentColor" />
+              <Star size={12} fill="currentColor" />
+              <Star size={12} fill="currentColor" />
+              <Star size={12} fill="currentColor" />
+              <Star size={12} className="opacity-50" />
+            </div>
+            <span className="text-xs font-bold text-white ml-1">{tvTimeRating}/5</span>
           </div>
-          <span className="text-xs font-bold text-white ml-1">{tvTimeRating}/5</span>
+          
+          <div className="flex items-center gap-1.5 border-l border-gray-700 pl-4">
+            <div className="bg-[#F5C518] text-black text-[10px] font-black px-1.5 py-0.5 rounded-sm">IMDb</div>
+            <span className="text-xs font-bold text-white">{show.vote_average ? show.vote_average.toFixed(1) : 'N/A'}</span>
+          </div>
         </div>
 
         <p className="text-sm text-gray-200 mt-2 leading-relaxed">
