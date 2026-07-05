@@ -245,15 +245,17 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
             <div className="p-8 text-center text-gray-500">No upcoming episodes for your shows.</div>
           ) : (
             upcomingRenderGroups.map((group) => (
-              <div key={group.label} className="flex flex-col mb-4">
-                <div className="flex justify-center mb-2">
-                  <span className="bg-[#555555] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+              <div key={group.label} className="flex flex-col">
+                <div className="flex justify-center my-3">
+                  <span className="bg-gray-500/80 text-white text-[11px] font-bold px-4 py-1 rounded-full uppercase tracking-wider">
                     {group.label}
                   </span>
                 </div>
-                {group.episodes.map(({ show, episode }) => (
-                  <UpcomingEpisodeRow key={`${show.id}-${episode.season}-${episode.episode}`} show={show} episode={episode} />
-                ))}
+                <div className="flex flex-col gap-1">
+                  {group.episodes.map(({ show, episode }) => (
+                    <UpcomingEpisodeRow key={`${show.id}-${episode.season}-${episode.episode}`} show={show} episode={episode} />
+                  ))}
+                </div>
               </div>
             ))
           )
