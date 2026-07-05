@@ -38,10 +38,22 @@ export function AboutTab({ show }: { show: TMDBShowDetails }) {
             <span className="text-xs font-bold text-white ml-1">{tvTimeRating}/5</span>
           </div>
           
-          <div className="flex items-center gap-1.5 border-l border-gray-700 pl-4">
-            <div className="bg-[#F5C518] text-black text-[10px] font-black px-1.5 py-0.5 rounded-sm">IMDb</div>
-            <span className="text-xs font-bold text-white">{show.vote_average ? show.vote_average.toFixed(1) : 'N/A'}</span>
-          </div>
+          {show.external_ids?.imdb_id ? (
+            <a 
+              href={`https://www.imdb.com/title/${show.external_ids.imdb_id}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 border-l border-gray-700 pl-4 hover:opacity-80 transition-opacity"
+            >
+              <div className="bg-[#F5C518] text-black text-[10px] font-black px-1.5 py-0.5 rounded-sm">IMDb</div>
+              <span className="text-xs font-bold text-white">{show.vote_average ? show.vote_average.toFixed(1) : 'N/A'}</span>
+            </a>
+          ) : (
+            <div className="flex items-center gap-1.5 border-l border-gray-700 pl-4">
+              <div className="bg-[#F5C518] text-black text-[10px] font-black px-1.5 py-0.5 rounded-sm">IMDb</div>
+              <span className="text-xs font-bold text-white">{show.vote_average ? show.vote_average.toFixed(1) : 'N/A'}</span>
+            </div>
+          )}
         </div>
 
         <p className="text-sm text-gray-200 mt-2 leading-relaxed">

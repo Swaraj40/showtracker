@@ -51,6 +51,9 @@ export type TMDBShowDetails = TMDBShow & {
       profile_path: string | null
     }[]
   }
+  external_ids?: {
+    imdb_id: string | null
+  }
 }
 
 export type TMDBEpisode = {
@@ -137,6 +140,7 @@ export async function getShowDetails(id: string | number): Promise<TMDBShowDetai
       genres: data.genres?.map((g: string, i: number) => ({ id: i, name: g })) || [],
       networks: data.network ? [{ id: data.network.id, name: data.network.name }] : [],
       episode_run_time: [data.averageRuntime || data.runtime || 45],
+      external_ids: { imdb_id: data.externals?.imdb || null },
       seasons: (data._embedded?.seasons || []).map((s: any) => ({
         id: s.id,
         name: s.name || `Season ${s.number}`,
@@ -149,7 +153,7 @@ export async function getShowDetails(id: string | number): Promise<TMDBShowDetai
     }
   }
 
-  const res = await fetch(`${TMDB_BASE_URL}/tv/${id}?append_to_response=credits,videos`, {
+  const res = await fetch(`${TMDB_BASE_URL}/tv/${id}?append_to_response=credits,videos,external_ids`, {
     headers: getHeaders(),
     next: { revalidate: 86400 }
   })

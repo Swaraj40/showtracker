@@ -64,15 +64,15 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
   let watchlistRenderData: any[] = []
   let upcomingRenderGroups: { label: string, episodes: any[] }[] = []
 
+  // Get user's watched episodes (needed for both tabs now)
+  const { data: watchedEpisodes } = await supabase
+    .from('user_episodes')
+    .select('show_id, season_number, episode_number')
+    .eq('user_id', user.id)
+
+  const watchedSet = new Set((watchedEpisodes || []).map(e => `${e.show_id}-${e.season_number}-${e.episode_number}`))
+
   if (tab === 'watchlist') {
-    // Get user's watched episodes
-    const { data: watchedEpisodes } = await supabase
-      .from('user_episodes')
-      .select('show_id, season_number, episode_number')
-      .eq('user_id', user.id)
-
-    const watchedSet = new Set((watchedEpisodes || []).map(e => `${e.show_id}-${e.season_number}-${e.episode_number}`))
-
     // Calculate Next Episode for each show
     const showsWithNextEpisode = await Promise.all(
       activeShows.map(async (tracked) => {
