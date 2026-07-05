@@ -138,7 +138,7 @@ export async function getShowDetails(id: string | number): Promise<TMDBShowDetai
       number_of_seasons: data._embedded?.seasons?.length || 0,
       status: data.status,
       genres: data.genres?.map((g: string, i: number) => ({ id: i, name: g })) || [],
-      networks: data.network ? [{ id: data.network.id, name: data.network.name }] : [],
+      networks: (data.network || data.webChannel) ? [{ id: (data.network || data.webChannel).id, name: (data.network || data.webChannel).name }] : [],
       episode_run_time: [data.averageRuntime || data.runtime || 45],
       external_ids: { imdb_id: data.externals?.imdb || null },
       seasons: (data._embedded?.seasons || []).map((s: any) => ({
@@ -155,7 +155,7 @@ export async function getShowDetails(id: string | number): Promise<TMDBShowDetai
 
   const res = await fetch(`${TMDB_BASE_URL}/tv/${id}?append_to_response=credits,videos,external_ids`, {
     headers: getHeaders(),
-    next: { revalidate: 86400 }
+    next: { revalidate: 60 }
   })
   if (!res.ok) throw new Error('Failed to fetch show details')
   return res.json()

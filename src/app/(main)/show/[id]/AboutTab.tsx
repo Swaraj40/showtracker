@@ -125,11 +125,19 @@ export function AboutTab({ show }: { show: TMDBShowDetails }) {
         </section>
       )}
 
-      {/* Placeholders */}
-      <section className="flex flex-col gap-2 border-b border-[#2A2A2A] pb-6">
-        <h2 className="text-lg font-bold text-white">People also watched</h2>
-        <p className="text-sm text-gray-400">Not available</p>
-      </section>
+      {/* Where to watch section */}
+      {show.networks && show.networks.length > 0 && (
+        <section className="flex flex-col gap-3 border-b border-[#2A2A2A] pb-6">
+          <h2 className="text-lg font-bold text-white">Where to watch</h2>
+          <div className="flex flex-wrap gap-2">
+            {show.networks.map(network => (
+              <div key={network.id} className="bg-gray-800 border border-gray-700 rounded-md px-3 py-1.5 flex items-center justify-center">
+                <span className="text-sm font-bold text-white">{network.name}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="flex flex-col gap-4 pb-6">
         <div className="flex justify-between items-end">
