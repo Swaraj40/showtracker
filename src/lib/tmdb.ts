@@ -90,6 +90,34 @@ export type TMDBMovieDetails = TMDBMovie & {
   status: string
 }
 
+
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+const TMDB_IMAGE_BASE_ORIGINAL = 'https://image.tmdb.org/t/p/original';
+
+function fixImagePaths(obj: any): any {
+  if (!obj) return obj;
+  if (Array.isArray(obj)) {
+    return obj.map((o: any) => fixImagePaths(o));
+  }
+  if (typeof obj === 'object') {
+    const result: any = { ...obj };
+    for (const key in result) {
+      if (typeof result[key] === 'string' && result[key].startsWith('/')) {
+        if (key === 'poster_path' || key === 'still_path' || key === 'profile_path') {
+          result[key] = TMDB_IMAGE_BASE + result[key];
+        } else if (key === 'backdrop_path') {
+          result[key] = TMDB_IMAGE_BASE_ORIGINAL + result[key];
+        }
+      } else if (typeof result[key] === 'object') {
+        result[key] = fixImagePaths(result[key]);
+      }
+    }
+    return result;
+  }
+  return obj;
+}
+
+
 // Fallback TVMaze mapper
 const tvMazeToTMDBShow = (show: any): TMDBShow => ({
   id: show.id,
@@ -107,7 +135,7 @@ export async function searchShows(query: string): Promise<TMDBShow[]> {
   if (!process.env.TMDB_API_KEY) {
     const res = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`);
     const data = await res.json();
-    return data.map((item: any) => tvMazeToTMDBShow(item.show));
+    return fixImagePaths(data).map((item: any) => tvMazeToTMDBShow(item.show));
   }
 
   const res = await fetch(getUrl(`/search/tv?query=${encodeURIComponent(query)}&include_adult=false`), {
@@ -116,14 +144,14 @@ export async function searchShows(query: string): Promise<TMDBShow[]> {
   })
   if (!res.ok) throw new Error('Failed to fetch shows')
   const data = await res.json()
-  return data.results || []
+  return fixImagePaths(data.results || [])
 }
 
 export async function getTrendingShows(): Promise<TMDBShow[]> {
   if (!process.env.TMDB_API_KEY) {
     const res = await fetch(`https://api.tvmaze.com/shows`);
     const data = await res.json();
-    return data.slice(0, 20).map(tvMazeToTMDBShow);
+    return fixImagePaths(data).slice(0, 20).map(tvMazeToTMDBShow);
   }
 
   const res = await fetch(getUrl(`/trending/tv/week`), {
@@ -132,7 +160,7 @@ export async function getTrendingShows(): Promise<TMDBShow[]> {
   })
   if (!res.ok) throw new Error('Failed to fetch trending')
   const data = await res.json()
-  return data.results || []
+  return fixImagePaths(data.results || [])
 }
 
 export async function getShowDetails(id: string | number): Promise<TMDBShowDetails> {
@@ -183,7 +211,7 @@ export async function getShowDetails(id: string | number): Promise<TMDBShowDetai
     })
   }
   
-  return data
+  return fixImagePaths(data)
 }
 
 export async function getSeasonDetails(showId: string | number, seasonNumber: number): Promise<TMDBEpisode[]> {
@@ -209,7 +237,7 @@ export async function getSeasonDetails(showId: string | number, seasonNumber: nu
   })
   if (!res.ok) throw new Error('Failed to fetch season details')
   const data = await res.json()
-  return data.episodes || []
+  return fixImagePaths(data.episodes || [])
 }
 
 export async function getTrendingMovies(): Promise<TMDBMovie[]> {
@@ -220,7 +248,7 @@ export async function getTrendingMovies(): Promise<TMDBMovie[]> {
   })
   if (!res.ok) throw new Error('Failed to fetch trending movies')
   const data = await res.json()
-  return data.results || []
+  return fixImagePaths(data.results || [])
 }
 
 export async function getUpcomingMovies(): Promise<TMDBMovie[]> {
@@ -231,7 +259,7 @@ export async function getUpcomingMovies(): Promise<TMDBMovie[]> {
   })
   if (!res.ok) throw new Error('Failed to fetch upcoming movies')
   const data = await res.json()
-  return data.results || []
+  return fixImagePaths(data.results || [])
 }
 
 export async function getMovieDetails(id: string | number): Promise<TMDBMovieDetails> {
@@ -241,7 +269,7 @@ export async function getMovieDetails(id: string | number): Promise<TMDBMovieDet
     next: { revalidate: 86400 }
   })
   if (!res.ok) throw new Error('Failed to fetch movie details')
-  return res.json()
+  return fixImagePaths(await res.json())
 }
 
 export async function searchMovies(query: string): Promise<TMDBMovie[]> {
@@ -252,5 +280,5 @@ export async function searchMovies(query: string): Promise<TMDBMovie[]> {
   })
   if (!res.ok) throw new Error('Failed to fetch movies')
   const data = await res.json()
-  return data.results || []
+  return fixImagePaths(data.results || [])
 }
