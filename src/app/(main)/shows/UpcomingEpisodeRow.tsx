@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { TMDBShowDetails } from '@/lib/tmdb'
 import { Check } from 'lucide-react'
 import { toggleEpisode } from '../show/[id]/actions'
+import Link from 'next/link'
 
 export function UpcomingEpisodeRow({ 
   show, 
@@ -28,8 +29,8 @@ export function UpcomingEpisodeRow({
   if (isWatched) return null 
 
   return (
-    <div className="flex items-center justify-between py-3 border-b border-[#1E1E1E] transition-all cursor-pointer hover:bg-white/5">
-      <div className="flex items-center gap-4 flex-1 overflow-hidden">
+    <div className="flex items-center justify-between py-3 border-b border-[#1E1E1E] transition-all hover:bg-white/5">
+      <Link href={`/show/${show.id}`} className="flex items-center gap-4 flex-1 overflow-hidden cursor-pointer">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img 
           src={show.poster_path ? (show.poster_path.startsWith('http') ? show.poster_path : `https://image.tmdb.org/t/p/w154${show.poster_path}`) : '/placeholder.jpg'} 
@@ -48,7 +49,7 @@ export function UpcomingEpisodeRow({
           <span className="text-sm text-gray-400 line-clamp-1">{episode.name || `Episode ${episode.episode}`}</span>
           <span className="bg-[#FFD54F] text-black text-[10px] font-bold px-1.5 py-0.5 rounded w-fit mt-1">NEW</span>
         </div>
-      </div>
+      </Link>
       
       {episode.isAired ? (
         <button 
