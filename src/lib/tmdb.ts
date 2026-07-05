@@ -2,10 +2,18 @@ export const TMDB_BASE_URL = 'https://api.tmdb.org/3'
 
 const getHeaders = () => {
   const apiKey = process.env.TMDB_API_KEY
-  return {
-    Authorization: `Bearer ${apiKey}`,
-    accept: 'application/json',
-  }
+  const isV4 = apiKey && apiKey.length > 50;
+  const headers: any = { accept: 'application/json' }
+  if (isV4) headers.Authorization = `Bearer ${apiKey}`
+  return headers;
+}
+
+const getUrl = (endpoint: string) => {
+  const apiKey = process.env.TMDB_API_KEY;
+  const isV4 = apiKey && apiKey.length > 50;
+  if (isV4) return `${TMDB_BASE_URL}${endpoint}`;
+  const separator = endpoint.includes('?') ? '&' : '?';
+  return `${TMDB_BASE_URL}${endpoint}${separator}api_key=${apiKey}`;
 }
 
 export type TMDBShow = {
@@ -102,7 +110,7 @@ export async function searchShows(query: string): Promise<TMDBShow[]> {
     return data.map((item: any) => tvMazeToTMDBShow(item.show));
   }
 
-  const res = await fetch(`${TMDB_BASE_URL}/search/tv?query=${encodeURIComponent(query)}&include_adult=false`, {
+  const res = await fetch(getUrl(`/search/tv?query=${encodeURIComponent(query)}&include_adult=false`), {
     headers: getHeaders(),
     next: { revalidate: 3600 }
   })
@@ -118,7 +126,7 @@ export async function getTrendingShows(): Promise<TMDBShow[]> {
     return data.slice(0, 20).map(tvMazeToTMDBShow);
   }
 
-  const res = await fetch(`${TMDB_BASE_URL}/trending/tv/week`, {
+  const res = await fetch(getUrl(`/trending/tv/week`), {
     headers: getHeaders(),
     next: { revalidate: 86400 } // cache for a day
   })
@@ -153,7 +161,7 @@ export async function getShowDetails(id: string | number): Promise<TMDBShowDetai
     }
   }
 
-  const res = await fetch(`${TMDB_BASE_URL}/tv/${id}?append_to_response=credits,videos,external_ids,watch/providers`, {
+  const res = await fetch(getUrl(`/tv/${id}?append_to_response=credits,videos,external_ids,watch/providers`), {
     headers: getHeaders(),
     next: { revalidate: 60 }
   })
@@ -195,7 +203,7 @@ export async function getSeasonDetails(showId: string | number, seasonNumber: nu
     }));
   }
 
-  const res = await fetch(`${TMDB_BASE_URL}/tv/${showId}/season/${seasonNumber}`, {
+  const res = await fetch(getUrl(`/tv/${showId}/season/${seasonNumber}`), {
     headers: getHeaders(),
     next: { revalidate: 86400 }
   })
@@ -206,7 +214,7 @@ export async function getSeasonDetails(showId: string | number, seasonNumber: nu
 
 export async function getTrendingMovies(): Promise<TMDBMovie[]> {
   if (!process.env.TMDB_API_KEY) return []
-  const res = await fetch(`${TMDB_BASE_URL}/trending/movie/week`, {
+  const res = await fetch(getUrl(`/trending/movie/week`), {
     headers: getHeaders(),
     next: { revalidate: 86400 }
   })
@@ -217,7 +225,7 @@ export async function getTrendingMovies(): Promise<TMDBMovie[]> {
 
 export async function getUpcomingMovies(): Promise<TMDBMovie[]> {
   if (!process.env.TMDB_API_KEY) return []
-  const res = await fetch(`${TMDB_BASE_URL}/movie/upcoming`, {
+  const res = await fetch(getUrl(`/movie/upcoming`), {
     headers: getHeaders(),
     next: { revalidate: 86400 }
   })
@@ -228,7 +236,7 @@ export async function getUpcomingMovies(): Promise<TMDBMovie[]> {
 
 export async function getMovieDetails(id: string | number): Promise<TMDBMovieDetails> {
   if (!process.env.TMDB_API_KEY) throw new Error('No API key')
-  const res = await fetch(`${TMDB_BASE_URL}/movie/${id}`, {
+  const res = await fetch(getUrl(`/movie/${id}`), {
     headers: getHeaders(),
     next: { revalidate: 86400 }
   })
@@ -238,7 +246,7 @@ export async function getMovieDetails(id: string | number): Promise<TMDBMovieDet
 
 export async function searchMovies(query: string): Promise<TMDBMovie[]> {
   if (!process.env.TMDB_API_KEY) return []
-  const res = await fetch(`${TMDB_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&include_adult=false`, {
+  const res = await fetch(getUrl(`/search/movie?query=${encodeURIComponent(query)}&include_adult=false`), {
     headers: getHeaders(),
     next: { revalidate: 3600 }
   })
