@@ -23,6 +23,8 @@ export type TMDBShowDetails = TMDBShow & {
   number_of_seasons: number
   status: string
   episode_run_time: number[]
+  genres?: { id: number, name: string }[]
+  networks?: { id: number, name: string }[]
   seasons: {
     id: number
     name: string
@@ -32,6 +34,23 @@ export type TMDBShowDetails = TMDBShow & {
     episode_count: number
     air_date: string
   }[]
+  videos?: {
+    results: {
+      id: string
+      key: string
+      name: string
+      site: string
+      type: string
+    }[]
+  }
+  credits?: {
+    cast: {
+      id: number
+      name: string
+      character: string
+      profile_path: string | null
+    }[]
+  }
 }
 
 export type TMDBEpisode = {
@@ -115,6 +134,8 @@ export async function getShowDetails(id: string | number): Promise<TMDBShowDetai
       number_of_episodes: 0,
       number_of_seasons: data._embedded?.seasons?.length || 0,
       status: data.status,
+      genres: data.genres?.map((g: string, i: number) => ({ id: i, name: g })) || [],
+      networks: data.network ? [{ id: data.network.id, name: data.network.name }] : [],
       episode_run_time: [data.averageRuntime || data.runtime || 45],
       seasons: (data._embedded?.seasons || []).map((s: any) => ({
         id: s.id,
@@ -128,7 +149,7 @@ export async function getShowDetails(id: string | number): Promise<TMDBShowDetai
     }
   }
 
-  const res = await fetch(`${TMDB_BASE_URL}/tv/${id}?append_to_response=credits`, {
+  const res = await fetch(`${TMDB_BASE_URL}/tv/${id}?append_to_response=credits,videos`, {
     headers: getHeaders(),
     next: { revalidate: 86400 }
   })

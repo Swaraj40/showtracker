@@ -49,32 +49,69 @@ function EpisodeRow({ episode, showId, isWatched, isLoggedIn }: { episode: TMDBE
   const [loading, setLoading] = useState(false)
 
   const handleToggle = async () => {
-    if (!isLoggedIn || loading) return
+    if (!isLoggedIn || loading || !isAired) return
     setLoading(true)
     await toggleEpisode(showId, episode.season_number, episode.episode_number, !isWatched)
     setLoading(false)
   }
 
+  const epDate = episode.air_date ? new Date(episode.air_date) : null
+  const today = new Date()
+  today.setHours(0,0,0,0)
+  
+  let isAired = false
+  let daysUntil = 0
+  if (epDate) {
+    const diffTime = epDate.getTime() - today.getTime()
+    daysUntil = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    isAired = daysUntil <= 0
+  }
+
   return (
     <div 
       onClick={handleToggle}
-      className={`flex items-center justify-between py-3 border-b border-[#1E1E1E] transition-all cursor-pointer hover:bg-white/5`}
+      className={`flex items-center justify-between py-3 border-b border-[#1E1E1E] transition-all cursor-pointer hover:bg-white/5 pl-4 pr-4`}
     >
-      <div className="flex flex-col gap-0.5 max-w-[80%]">
-        <span className="font-semibold text-[15px] leading-tight text-white line-clamp-1">
-          {episode.episode_number}. {episode.name}
-        </span>
-        <span className="text-xs text-gray-400">{episode.air_date}</span>
+      <div className="flex items-center gap-4 max-w-[70%]">
+        {episode.still_path ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img 
+            src={episode.still_path.startsWith('http') ? episode.still_path : `https://image.tmdb.org/t/p/w185${episode.still_path}`} 
+            className="w-16 h-16 object-cover rounded-md flex-shrink-0 bg-gray-800" 
+            alt="Episode thumbnail"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-md flex-shrink-0 bg-[#2A2A2A]" />
+        )}
+        
+        <div className="flex flex-col gap-0.5">
+          <span className="font-bold text-[15px] leading-tight text-white line-clamp-1">
+            S{String(episode.season_number).padStart(2, '0')} | E{String(episode.episode_number).padStart(2, '0')}
+          </span>
+          <span className="text-sm text-gray-400">Episode {episode.episode_number}</span>
+        </div>
       </div>
+      
       {isLoggedIn && (
-        <button 
-          disabled={loading}
-          className={`shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors ${
-            isWatched ? 'bg-[#FFD54F] border-[#FFD54F] text-black' : 'border-gray-600 text-transparent hover:border-[#FFD54F]'
-          }`}
-        >
-          <Check size={16} strokeWidth={4} />
-        </button>
+        <div className="shrink-0 pl-2">
+          {isAired ? (
+             <button 
+               disabled={loading}
+               className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                 isWatched 
+                   ? 'bg-[#34D399] text-white' // Green check
+                   : 'bg-white text-black' // White/Grey check
+               }`}
+             >
+               <Check size={18} strokeWidth={4} />
+             </button>
+          ) : (
+             <div className="flex flex-col items-end">
+                <span className="text-xs font-bold text-gray-400">{daysUntil}</span>
+                <span className="text-[10px] font-bold text-gray-500 uppercase">DAYS</span>
+             </div>
+          )}
+        </div>
       )}
     </div>
   )
