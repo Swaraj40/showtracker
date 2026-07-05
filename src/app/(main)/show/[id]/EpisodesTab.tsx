@@ -46,6 +46,7 @@ export function EpisodesTab({
             key={season.id}
             showId={show.id}
             season={season}
+            showPoster={show.poster_path}
             watchedEpisodes={watchedEpisodes}
             isLoggedIn={isLoggedIn}
           />

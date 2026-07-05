@@ -7,11 +7,13 @@ import { EpisodeItem } from './EpisodeItem'
 export function SeasonAccordion({ 
   showId, 
   season, 
+  showPoster,
   watchedEpisodes, 
   isLoggedIn 
 }: { 
   showId: number, 
-  season: { season_number: number, episode_count: number, name: string },
+  season: { season_number: number, episode_count: number, name: string, poster_path?: string },
+  showPoster: string | null,
   watchedEpisodes: string[],
   isLoggedIn: boolean
 }) {
@@ -45,6 +47,8 @@ export function SeasonAccordion({
             showId={showId} 
             seasonNumber={season.season_number} 
             episodeCount={season.episode_count}
+            showPoster={showPoster}
+            seasonPoster={season.poster_path || null}
             watchedEpisodes={watchedEpisodes}
             isLoggedIn={isLoggedIn}
           />

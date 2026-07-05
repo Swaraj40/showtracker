@@ -9,12 +9,16 @@ export function EpisodeItem({
   showId, 
   seasonNumber, 
   episodeCount,
+  showPoster,
+  seasonPoster,
   watchedEpisodes,
   isLoggedIn
 }: { 
   showId: number, 
   seasonNumber: number, 
   episodeCount: number,
+  showPoster: string | null,
+  seasonPoster: string | null,
   watchedEpisodes: string[],
   isLoggedIn: boolean
 }) {
@@ -37,6 +41,8 @@ export function EpisodeItem({
           key={ep.id} 
           episode={ep} 
           showId={showId} 
+          showPoster={showPoster}
+          seasonPoster={seasonPoster}
           isWatched={watchedEpisodes.includes(`${seasonNumber}-${ep.episode_number}`)}
           isLoggedIn={isLoggedIn}
         />
@@ -45,7 +51,21 @@ export function EpisodeItem({
   )
 }
 
-function EpisodeRow({ episode, showId, isWatched, isLoggedIn }: { episode: TMDBEpisode, showId: number, isWatched: boolean, isLoggedIn: boolean }) {
+function EpisodeRow({ 
+  episode, 
+  showId, 
+  showPoster, 
+  seasonPoster, 
+  isWatched, 
+  isLoggedIn 
+}: { 
+  episode: TMDBEpisode, 
+  showId: number, 
+  showPoster: string | null,
+  seasonPoster: string | null,
+  isWatched: boolean, 
+  isLoggedIn: boolean 
+}) {
   const [loading, setLoading] = useState(false)
 
   const handleToggle = async () => {
@@ -67,16 +87,21 @@ function EpisodeRow({ episode, showId, isWatched, isLoggedIn }: { episode: TMDBE
     isAired = daysUntil <= 0
   }
 
+  const fallbackImage = seasonPoster || showPoster
+  const imageUrl = episode.still_path 
+    ? (episode.still_path.startsWith('http') ? episode.still_path : `https://image.tmdb.org/t/p/w185${episode.still_path}`)
+    : (fallbackImage ? (fallbackImage.startsWith('http') ? fallbackImage : `https://image.tmdb.org/t/p/w185${fallbackImage}`) : null)
+
   return (
     <div 
       onClick={handleToggle}
       className={`flex items-center justify-between py-3 border-b border-[#1E1E1E] transition-all cursor-pointer hover:bg-white/5 pl-4 pr-4`}
     >
       <div className="flex items-center gap-4 max-w-[70%]">
-        {episode.still_path ? (
+        {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img 
-            src={episode.still_path.startsWith('http') ? episode.still_path : `https://image.tmdb.org/t/p/w185${episode.still_path}`} 
+            src={imageUrl} 
             className="w-16 h-16 object-cover rounded-md flex-shrink-0 bg-gray-800" 
             alt="Episode thumbnail"
           />
