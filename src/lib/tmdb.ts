@@ -1,4 +1,4 @@
-export const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
+export const TMDB_BASE_URL = 'https://api.tmdb.org/3'
 
 const getHeaders = () => {
   const apiKey = process.env.TMDB_API_KEY
@@ -153,12 +153,29 @@ export async function getShowDetails(id: string | number): Promise<TMDBShowDetai
     }
   }
 
-  const res = await fetch(`${TMDB_BASE_URL}/tv/${id}?append_to_response=credits,videos,external_ids`, {
+  const res = await fetch(`${TMDB_BASE_URL}/tv/${id}?append_to_response=credits,videos,external_ids,watch/providers`, {
     headers: getHeaders(),
     next: { revalidate: 60 }
   })
   if (!res.ok) throw new Error('Failed to fetch show details')
-  return res.json()
+  
+  const data = await res.json()
+  
+  // Merge streaming providers into networks for the "Where to watch" section
+  const usProviders = data['watch/providers']?.results?.US?.flatrate || []
+  if (usProviders.length > 0) {
+    const existingNetworkIds = new Set((data.networks || []).map((n: any) => n.id))
+    usProviders.forEach((provider: any) => {
+      // Use negative IDs for streaming providers to avoid collision with TMDB network IDs
+      if (!existingNetworkIds.has(-provider.provider_id)) {
+        data.networks = data.networks || []
+        data.networks.push({ id: -provider.provider_id, name: provider.provider_name })
+        existingNetworkIds.add(-provider.provider_id)
+      }
+    })
+  }
+  
+  return data
 }
 
 export async function getSeasonDetails(showId: string | number, seasonNumber: number): Promise<TMDBEpisode[]> {
