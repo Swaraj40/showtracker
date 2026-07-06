@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { ChevronDown, MoreHorizontal, Star, Calendar, Eye, Check, X, Edit2, Heart, ListPlus, MinusSquare, Share, Play } from 'lucide-react'
 import { TMDBMovieDetails } from '@/lib/tmdb'
 import { motion, AnimatePresence } from 'framer-motion'
+import { CharacterPoll } from '@/components/CharacterPoll'
+import InterestsPoll from '@/components/InterestsPoll'
 import { AddToListModal } from '@/components/AddToListModal'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -268,19 +270,12 @@ export function MovieClient({
               )}
             </div>
 
-            {/* Engagement Hook (if not watched) */}
-            {status !== 'completed' && (
-              <div className="px-4 py-6 border-b border-border">
-                <h3 className="text-foreground-muted text-xs font-bold tracking-widest text-center mb-4">WHAT INTERESTS YOU MOST ABOUT THIS MOVIE?</h3>
-                <div className="flex flex-col gap-2">
-                  {['THE CAST', 'THE PREMISE', 'THE CREATORS', 'THE STUDIO', 'THE FRANCHISE OR UNIVERSE', 'OTHER'].map(interest => (
-                    <button key={interest} className="w-full py-3 bg-surface-elevated text-foreground-muted font-bold text-sm rounded-md">
-                      {interest}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Engagement Hook */}
+            <InterestsPoll 
+              itemId={movie.id} 
+              itemType="movie" 
+              title="WHAT INTERESTS YOU MOST ABOUT THIS MOVIE?" 
+            />
 
             {/* Movie Info */}
             <div className="px-4 py-6 border-b border-border">
