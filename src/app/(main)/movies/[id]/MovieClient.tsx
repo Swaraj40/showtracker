@@ -6,6 +6,8 @@ import { TMDBMovieDetails } from '@/lib/tmdb'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CharacterPoll } from '@/components/CharacterPoll'
 import InterestsPoll from '@/components/InterestsPoll'
+import EmotionPoll from '@/components/EmotionPoll'
+import RatingPoll from '@/components/RatingPoll'
 import { AddToListModal } from '@/components/AddToListModal'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -371,36 +373,10 @@ export function MovieClient({
             </div>
 
             {/* Rate this movie */}
-            <div className="px-4 py-8 border-b border-border">
-              <h3 className="text-foreground-muted text-xs font-bold tracking-widest text-center mb-6">RATE THIS MOVIE</h3>
-              <div className="flex justify-center gap-4">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button key={star} onClick={() => setRating(star)} className="flex flex-col items-center gap-2">
-                    <Star size={32} className={rating && rating >= star ? 'fill-white text-foreground' : 'text-foreground-muted fill-gray-600'} />
-                    <span className="text-foreground-muted text-[10px] font-bold">{ratingLabels[star - 1]}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <RatingPoll itemId={movie.id} itemType="movie" />
 
             {/* How did you feel */}
-            <div className="px-4 py-8 border-b border-border">
-              <h3 className="text-foreground-muted text-xs font-bold tracking-widest text-center mb-6">HOW DID YOU FEEL?</h3>
-              <div className="grid grid-cols-4 gap-4">
-                {feelings.map(f => (
-                  <button 
-                    key={f.id}
-                    onClick={() => setFeeling(f.id)}
-                    className="flex flex-col items-center gap-2"
-                  >
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-3xl ${feeling === f.id ? 'bg-surface-elevated' : 'bg-surface-elevated'}`}>
-                      {f.emoji}
-                    </div>
-                    <span className="text-foreground-muted text-[10px] font-bold uppercase">{f.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <EmotionPoll itemId={movie.id} itemType="movie" />
 
             {/* Who was your favorite */}
             {cast.length > 0 && (
