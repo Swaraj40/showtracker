@@ -14,11 +14,13 @@ type Profile = {
 export function ProfileHeaderClient({ 
   profile, 
   userEmail, 
-  backdropUrl 
+  backdropUrl,
+  isOwner = true
 }: { 
   profile: Profile | null, 
   userEmail: string,
-  backdropUrl: string
+  backdropUrl: string,
+  isOwner?: boolean
 }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -51,11 +53,13 @@ export function ProfileHeaderClient({
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-transparent h-24" />
 
         {/* Top Icons */}
-        <div className="absolute top-4 left-4 z-10">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg">
-            <Bell size={20} className="text-black fill-black" />
+        {isOwner && (
+          <div className="absolute top-4 left-4 z-10">
+            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg">
+              <Bell size={20} className="text-black fill-black" />
+            </div>
           </div>
-        </div>
+        )}
         
         <div className="absolute top-4 right-4 z-20" ref={menuRef}>
           <button 
@@ -67,13 +71,15 @@ export function ProfileHeaderClient({
           
           {isMenuOpen && (
             <div className="absolute top-12 right-0 w-48 bg-surface border border-surface-hover rounded-md shadow-2xl overflow-hidden py-1">
-              <Link 
-                href="/profile/settings"
-                onClick={() => setIsMenuOpen(false)}
-                className="block px-4 py-3 text-sm text-foreground hover:bg-surface-hover font-medium transition-colors"
-              >
-                View settings
-              </Link>
+              {isOwner && (
+                <Link 
+                  href="/profile/settings"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block px-4 py-3 text-sm text-foreground hover:bg-surface-hover font-medium transition-colors"
+                >
+                  View settings
+                </Link>
+              )}
               <button 
                 onClick={() => {
                   setIsMenuOpen(false)
@@ -106,12 +112,14 @@ export function ProfileHeaderClient({
           />
           <div className="flex flex-col">
             <span className="text-[22px] font-bold text-white drop-shadow-lg tracking-wide">{displayName}</span>
-            <button 
-              onClick={() => setIsEditModalOpen(true)}
-              className="text-[11px] font-bold border border-white rounded-full px-5 py-1 mt-1 w-fit uppercase text-white hover:bg-white hover:text-black transition-colors shadow-sm"
-            >
-              EDIT
-            </button>
+            {isOwner && (
+              <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="text-[11px] font-bold border border-white rounded-full px-5 py-1 mt-1 w-fit uppercase text-white hover:bg-white hover:text-black transition-colors shadow-sm"
+              >
+                EDIT
+              </button>
+            )}
           </div>
         </div>
       </div>
