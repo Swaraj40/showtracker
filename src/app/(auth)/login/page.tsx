@@ -1,4 +1,5 @@
 import { login } from '../actions'
+import { OAuthButtons } from '@/components/OAuthButtons'
 
 export default async function LoginPage({
   searchParams,
@@ -7,21 +8,27 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   return (
-    <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2">
+    <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2 mt-12">
+      <OAuthButtons />
+      
       <form className="flex-1 flex flex-col w-full justify-center gap-2">
-        <h1 className="text-2xl font-bold mb-4">Sign In</h1>
-        <label className="text-md" htmlFor="email">
+        <label className="text-md mt-4" htmlFor="email">
           Email
         </label>
         <input
-          className="rounded-xl px-4 py-3 bg-white/10 border border-white/20 mb-6 text-white placeholder:text-white/50 focus:outline-none focus:border-[#FFD54F] transition-colors"
+          className="rounded-xl px-4 py-3 bg-white/10 border border-white/20 mb-4 text-white placeholder:text-white/50 focus:outline-none focus:border-[#FFD54F] transition-colors"
           name="email"
           placeholder="you@example.com"
           required
         />
-        <label className="text-md" htmlFor="password">
-          Password
-        </label>
+        <div className="flex justify-between items-center">
+          <label className="text-md" htmlFor="password">
+            Password
+          </label>
+          <a href="/forgot-password" className="text-xs text-blue-400 hover:underline">
+            Forgot password?
+          </a>
+        </div>
         <input
           className="rounded-xl px-4 py-3 bg-white/10 border border-white/20 mb-6 text-white placeholder:text-white/50 focus:outline-none focus:border-[#FFD54F] transition-colors"
           type="password"
