@@ -62,6 +62,16 @@ export type TMDBShowDetails = TMDBShow & {
   external_ids?: {
     imdb_id: string | null
   }
+  last_episode_to_air?: {
+    air_date: string
+    episode_number: number
+    season_number: number
+  } | null
+  next_episode_to_air?: {
+    air_date: string
+    episode_number: number
+    season_number: number
+  } | null
 }
 
 export type TMDBEpisode = {
@@ -88,6 +98,16 @@ export type TMDBMovie = {
 export type TMDBMovieDetails = TMDBMovie & {
   runtime: number
   status: string
+  genres: { id: number, name: string }[]
+  networks?: { id: number, name: string }[]
+  credits?: {
+    cast: {
+      id: number
+      name: string
+      character: string
+      profile_path: string | null
+    }[]
+  }
 }
 
 
@@ -264,12 +284,24 @@ export async function getUpcomingMovies(): Promise<TMDBMovie[]> {
 
 export async function getMovieDetails(id: string | number): Promise<TMDBMovieDetails> {
   if (!process.env.TMDB_API_KEY) throw new Error('No API key')
-  const res = await fetch(getUrl(`/movie/${id}`), {
+  const res = await fetch(getUrl(`/movie/${id}?append_to_response=credits,watch/providers`), {
     headers: getHeaders(),
     next: { revalidate: 86400 }
   })
   if (!res.ok) throw new Error('Failed to fetch movie details')
-  return fixImagePaths(await res.json())
+  
+  const data = await res.json()
+  
+  // Merge streaming providers into networks
+  const usProviders = data['watch/providers']?.results?.US?.flatrate || []
+  if (usProviders.length > 0) {
+    data.networks = []
+    usProviders.forEach((provider: any) => {
+      data.networks.push({ id: -provider.provider_id, name: provider.provider_name })
+    })
+  }
+  
+  return fixImagePaths(data)
 }
 
 export async function searchMovies(query: string): Promise<TMDBMovie[]> {
@@ -282,3 +314,26 @@ export async function searchMovies(query: string): Promise<TMDBMovie[]> {
   const data = await res.json()
   return fixImagePaths(data.results || [])
 }
+
+export async function getSimilarShows(id: string | number): Promise<TMDBShow[]> {
+  if (!process.env.TMDB_API_KEY) return []
+  const res = await fetch(getUrl(`/tv/${id}/similar`), {
+    headers: getHeaders(),
+    next: { revalidate: 86400 }
+  })
+  if (!res.ok) return []
+  const data = await res.json()
+  return fixImagePaths(data.results || [])
+}
+
+export async function getSimilarMovies(id: string | number): Promise<TMDBMovie[]> {
+  if (!process.env.TMDB_API_KEY) return []
+  const res = await fetch(getUrl(`/movie/${id}/similar`), {
+    headers: getHeaders(),
+    next: { revalidate: 86400 }
+  })
+  if (!res.ok) return []
+  const data = await res.json()
+  return fixImagePaths(data.results || [])
+}
+

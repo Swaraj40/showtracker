@@ -27,7 +27,7 @@ export function SearchInput({ initialQuery }: { initialQuery: string }) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search for shows..."
-        className={`w-full bg-gray-800 text-white rounded-xl px-6 py-4 outline-none transition-all ${
+        className={`w-full bg-surface-elevated text-foreground rounded-xl px-6 py-4 outline-none transition-all ${
           focused ? 'ring-4 ring-white scale-[1.02]' : 'focus:ring-2 focus:ring-blue-500'
         }`}
       />

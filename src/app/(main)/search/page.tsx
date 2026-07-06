@@ -1,5 +1,6 @@
 import { searchShows, searchMovies } from '@/lib/tmdb'
 import { QuickTrackButton } from '@/components/QuickTrackButton'
+import { QuickTrackMovieButton } from '@/components/QuickTrackMovieButton'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { SearchIcon } from 'lucide-react'
@@ -24,14 +25,18 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const { data: { user } } = await supabase.auth.getUser()
   
   const trackedShows = new Set<number>()
+  const trackedMovies = new Set<number>()
   if (user) {
-    const { data: userShows } = await supabase
-      .from('user_shows')
-      .select('show_id')
-      .eq('user_id', user.id)
+    const [{ data: userShows }, { data: userMovies }] = await Promise.all([
+      supabase.from('user_shows').select('show_id').eq('user_id', user.id),
+      supabase.from('user_movies').select('movie_id').eq('user_id', user.id)
+    ])
     
     if (userShows) {
       userShows.forEach(s => trackedShows.add(s.show_id))
+    }
+    if (userMovies) {
+      userMovies.forEach(m => trackedMovies.add(m.movie_id))
     }
   }
 
@@ -45,21 +50,21 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           name="q" 
           defaultValue={query}
           placeholder="Search for shows or movies..." 
-          className="w-full bg-[#1E1E1E] text-white rounded-full py-3 px-12 outline-none focus:ring-2 focus:ring-[#FFD54F]"
+          className="w-full bg-surface-elevated text-foreground rounded-full py-3 px-12 outline-none focus:ring-2 focus:ring-[#FFD54F]"
         />
-        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-muted" size={20} />
       </form>
 
       {query.length > 2 ? (
         <div className="flex flex-col gap-6">
           {showResults.length > 0 && (
             <div className="flex flex-col gap-4">
-              <h2 className="text-lg font-bold text-gray-400 uppercase tracking-widest">Shows</h2>
+              <h2 className="text-lg font-bold text-foreground-muted uppercase tracking-widest">Shows</h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                 {showResults.slice(0, 10).map((show) => {
                   const isTracked = trackedShows.has(show.id)
                   return (
-                    <div key={show.id} className="relative aspect-[2/3] rounded-md overflow-hidden bg-gray-900 group block">
+                    <div key={show.id} className="relative aspect-[2/3] rounded-md overflow-hidden bg-surface-elevated group block">
                       <a href={`/show/${show.id}`} className="absolute inset-0 z-10" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
@@ -82,12 +87,13 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
 
           {movieResults.length > 0 && (
             <div className="flex flex-col gap-4">
-              <h2 className="text-lg font-bold text-gray-400 uppercase tracking-widest">Movies</h2>
+              <h2 className="text-lg font-bold text-foreground-muted uppercase tracking-widest">Movies</h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                 {movieResults.slice(0, 10).map((movie) => {
+                  const isTracked = trackedMovies.has(movie.id)
                   return (
-                    <div key={movie.id} className="relative aspect-[2/3] rounded-md overflow-hidden bg-gray-900 block">
-                      {/* Note: Movie details page not yet implemented */}
+                    <div key={movie.id} className="relative aspect-[2/3] rounded-md overflow-hidden bg-surface-elevated block group">
+                      <a href={`/movies/${movie.id}`} className="absolute inset-0 z-10" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
                         src={movie.poster_path ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w342${movie.poster_path}`) : '/placeholder.jpg'} 
@@ -97,6 +103,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-2 pb-8">
                         <span className="text-xs font-bold line-clamp-2">{movie.title}</span>
                       </div>
+                      <div className="absolute z-20 top-2 right-2">
+                         {user && <QuickTrackMovieButton movieId={movie.id} isTracked={isTracked} />}
+                      </div>
                     </div>
                   )
                 })}
@@ -105,14 +114,14 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           )}
           
           {showResults.length === 0 && movieResults.length === 0 && (
-            <div className="text-center text-gray-500 py-12">No results found for "{query}"</div>
+            <div className="text-center text-foreground-muted py-12">No results found for "{query}"</div>
           )}
         </div>
       ) : (
         query.length > 0 && query.length <= 2 ? (
-          <div className="text-center text-gray-500 py-12">Type at least 3 characters to search</div>
+          <div className="text-center text-foreground-muted py-12">Type at least 3 characters to search</div>
         ) : (
-          <div className="text-center text-gray-500 py-12">Enter a show or movie name to begin</div>
+          <div className="text-center text-foreground-muted py-12">Enter a show or movie name to begin</div>
         )
       )}
     </div>

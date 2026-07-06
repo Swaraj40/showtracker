@@ -15,14 +15,14 @@ function MobileNav() {
   ]
 
   return (
-    <nav className="fixed bottom-0 w-full bg-[#121212] border-t border-[#1E1E1E] flex justify-around p-3 pb-safe z-50">
+    <nav className="fixed bottom-0 w-full bg-surface border-t border-border flex justify-around p-3 pb-safe z-50">
       {tabs.map((tab) => {
         const isActive = pathname === tab.href
         return (
           <Link 
             key={tab.name}
             href={tab.href} 
-            className={`flex flex-col items-center transition-colors ${isActive ? 'text-[#FFD54F]' : 'text-gray-500 hover:text-gray-300'}`}
+            className={`flex flex-col items-center transition-colors ${isActive ? 'text-[#FFD54F]' : 'text-foreground-muted hover:text-foreground-muted'}`}
           >
             <tab.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
             <span className="text-[10px] mt-1 font-medium">{tab.name}</span>

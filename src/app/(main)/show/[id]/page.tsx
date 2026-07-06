@@ -1,9 +1,12 @@
 import { getShowDetails } from '@/lib/tmdb'
 import { createClient } from '@/utils/supabase/server'
 import { TrackButton } from './TrackButton'
+import { FavoriteButton } from './FavoriteButton'
+import { AddToListButtonClient } from './AddToListButtonClient'
 import { AboutTab } from './AboutTab'
 import { EpisodesTab } from './EpisodesTab'
-import { ChevronDown, MoreHorizontal } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
+import { ShowMenuClient } from './ShowMenuClient'
 
 export const dynamic = "force-dynamic"
 
@@ -18,17 +21,21 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
   const { data: { user } } = await supabase.auth.getUser()
 
   let currentStatus = null
+  let isFavorite = false
   let watchedEpisodes = new Set<string>()
 
   if (user) {
     const { data: showData } = await supabase
       .from('user_shows')
-      .select('status')
+      .select('status, is_favorite')
       .eq('show_id', show.id)
       .eq('user_id', user.id)
       .single()
     
-    if (showData) currentStatus = showData.status
+    if (showData) {
+      currentStatus = showData.status
+      isFavorite = showData.is_favorite
+    }
 
     const { data: episodeData } = await supabase
       .from('user_episodes')
@@ -41,19 +48,31 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
     }
   }
 
+  const { count: commentsCount } = await supabase
+    .from('comments')
+    .select('id', { count: 'exact', head: true })
+    .eq('media_type', 'show')
+    .eq('media_id', show.id)
+
   const backdropUrl = show.backdrop_path ? (show.backdrop_path.startsWith('http') ? show.backdrop_path : `https://image.tmdb.org/t/p/original${show.backdrop_path}`) : ''
+  const coverPath = show.backdrop_path ? (show.backdrop_path.startsWith('http') ? show.backdrop_path : `https://image.tmdb.org/t/p/w780${show.backdrop_path}`) : undefined
 
   return (
-    <div className="flex flex-col pb-12 w-full bg-black min-h-screen">
+    <div className="flex flex-col pb-12 w-full bg-background min-h-screen">
       {/* Top Navigation Bar */}
       <div className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between px-4 py-4 pointer-events-none">
         <a href="/" className="pointer-events-auto text-white">
           <ChevronDown size={28} className="rotate-90" />
         </a>
         <h1 className="text-white font-bold truncate px-4 drop-shadow-md">{show.name}</h1>
-        <button className="pointer-events-auto text-white">
-          <MoreHorizontal size={28} />
-        </button>
+        <ShowMenuClient 
+          showId={show.id} 
+          showName={show.name} 
+          initialStatus={currentStatus} 
+          initialIsFavorite={isFavorite} 
+          user={user} 
+          coverPath={coverPath} 
+        />
       </div>
 
       {/* Hero section */}
@@ -65,14 +84,18 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
           </>
         ) : (
-          <div className="absolute inset-0 bg-[#1E1E1E]" />
+          <div className="absolute inset-0 bg-surface-elevated" />
         )}
       </div>
       
       {/* Track Button overlaid slightly on the hero */}
-      <div className="px-4 -mt-6 relative z-10 flex justify-center mb-4">
+      <div className="px-4 -mt-6 relative z-10 flex justify-center mb-4 gap-3">
         {user ? (
-          <TrackButton showId={show.id} currentStatus={currentStatus} />
+          <>
+            <TrackButton showId={show.id} currentStatus={currentStatus} />
+            <FavoriteButton showId={show.id} isFavorite={isFavorite} />
+            <AddToListButtonClient itemId={show.id} mediaType="tv" coverPath={coverPath} />
+          </>
         ) : (
           <a href="/login" className="w-full max-w-sm flex items-center justify-center gap-2 py-3 bg-[#FFD54F] text-black rounded-full font-bold shadow-lg">
             Log in to track this show
@@ -81,25 +104,25 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
       </div>
 
       {/* Tabs */}
-      <div className="flex w-full border-b border-[#2A2A2A] sticky top-0 bg-black z-40">
+      <div className="flex w-full border-b border-border sticky top-0 bg-background z-40">
         <a 
           href={`/show/${show.id}?tab=about`}
-          className={`flex-1 text-center py-4 text-[11px] font-bold tracking-[0.2em] transition-colors ${tab === 'about' ? 'text-white border-b-2 border-[#FFD54F]' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`flex-1 text-center py-4 text-[11px] font-bold tracking-[0.2em] transition-colors ${tab === 'about' ? 'text-foreground border-b-2 border-[#FFD54F]' : 'text-foreground-muted hover:text-foreground-muted'}`}
         >
           ABOUT
         </a>
         <a 
           href={`/show/${show.id}?tab=episodes`}
-          className={`flex-1 text-center py-4 text-[11px] font-bold tracking-[0.2em] transition-colors ${tab === 'episodes' ? 'text-white border-b-2 border-[#FFD54F]' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`flex-1 text-center py-4 text-[11px] font-bold tracking-[0.2em] transition-colors ${tab === 'episodes' ? 'text-foreground border-b-2 border-[#FFD54F]' : 'text-foreground-muted hover:text-foreground-muted'}`}
         >
           EPISODES
         </a>
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 w-full bg-black">
+      <div className="flex-1 w-full bg-background">
         {tab === 'about' ? (
-          <AboutTab show={show} />
+          <AboutTab show={show} commentsCount={commentsCount || 0} />
         ) : (
           <EpisodesTab 
             show={show} 

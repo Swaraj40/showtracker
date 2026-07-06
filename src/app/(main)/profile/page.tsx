@@ -1,6 +1,10 @@
 import { createClient } from '@/utils/supabase/server'
-import { getShowDetails } from '@/lib/tmdb'
-import { logout } from '@/app/(auth)/actions'
+import { getShowDetails, getMovieDetails } from '@/lib/tmdb'
+import { ProfileHeaderClient } from './ProfileHeaderClient'
+import { ProfilePosterCarousel, ProfilePoster } from './ProfilePosterCarousel'
+import { ProfileListCarousel, CustomList } from './ProfileListCarousel'
+import { ProfileStatsCarousel } from './ProfileStatsCarousel'
+import { Heart } from 'lucide-react'
 
 export const dynamic = "force-dynamic"
 
@@ -26,168 +30,168 @@ export default async function ProfilePage() {
     .eq('id', user.id)
     .single()
 
-  // Fetch watched episodes
-  const { data: episodes } = await supabase
-    .from('user_episodes')
-    .select('show_id')
+  // Fetch all user shows
+  const { data: userShows } = await supabase
+    .from('user_shows')
+    .select('show_id, status, is_favorite')
     .eq('user_id', user.id)
 
-  const episodeCount = episodes?.length || 0
-  
-  // Compute TV Time (defaulting to 45 mins per episode to prevent massive TMDB API rate limiting)
-  let totalTvMinutes = episodeCount * 45
-
-  // Format TV Time
-  const tvMonths = Math.floor(totalTvMinutes / (60 * 24 * 30))
-  const tvDays = Math.floor((totalTvMinutes % (60 * 24 * 30)) / (60 * 24))
-  const tvHours = Math.floor((totalTvMinutes % (60 * 24)) / 60)
-
-  // Fetch watched movies
-  // Note: Assuming user_movies exists after migration
-  let movieCount = 0
-  let totalMovieMinutes = 0
+  // Fetch all user movies
+  let userMovies: any[] = []
   try {
     const { data: movies } = await supabase
       .from('user_movies')
-      .select('movie_id')
+      .select('movie_id, status, is_favorite')
       .eq('user_id', user.id)
-      .eq('status', 'completed')
-    
-    movieCount = movies?.length || 0
-    // We would fetch movie runtimes here, but defaulting to 120 mins for now to avoid TMDB spam
-    totalMovieMinutes = movieCount * 120
-  } catch (e) {
-    // Table might not exist if migration hasn't been run
+    if (movies) userMovies = movies
+  } catch(e) {}
+
+  // Fetch user lists
+  let userListsData: any[] = []
+  try {
+    const { data: lists } = await supabase
+      .from('user_lists')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    if (lists) userListsData = lists
+  } catch(e) {}
+
+  // We need to hydrate IDs with posters from TMDB
+  const fetchShowPoster = async (id: number): Promise<ProfilePoster | null> => {
+    try {
+      const details = await getShowDetails(id)
+      const posterUrl = details.poster_path 
+        ? (details.poster_path.startsWith('http') ? details.poster_path : `https://image.tmdb.org/t/p/w342${details.poster_path}`)
+        : '/placeholder.jpg'
+      return { id, title: details.name, poster_url: posterUrl, url: `/show/${id}` }
+    } catch (e) {
+      return null
+    }
   }
 
-  const mMonths = Math.floor(totalMovieMinutes / (60 * 24 * 30))
-  const mDays = Math.floor((totalMovieMinutes % (60 * 24 * 30)) / (60 * 24))
-  const mHours = Math.floor((totalMovieMinutes % (60 * 24)) / 60)
+  const fetchMoviePoster = async (id: number): Promise<ProfilePoster | null> => {
+    try {
+      const details = await getMovieDetails(id)
+      const posterUrl = details.poster_path 
+        ? (details.poster_path.startsWith('http') ? details.poster_path : `https://image.tmdb.org/t/p/w342${details.poster_path}`)
+        : '/placeholder.jpg'
+      return { id, title: details.title, poster_url: posterUrl, url: `/movies/${id}` }
+    } catch (e) {
+      return null
+    }
+  }
+
+  // Filter shows & movies
+  const completedShowIds = (userShows || []).filter(s => s.status === 'completed' || s.status === 'watching').map(s => s.show_id)
+  const favoriteShowIds = (userShows || []).filter(s => s.is_favorite === true).map(s => s.show_id)
+  const completedMovieIds = userMovies.filter(m => m.status === 'completed').map(m => m.movie_id)
+  const favoriteMovieIds = userMovies.filter(m => m.is_favorite === true).map(m => m.movie_id)
+
+  // Hydrate Data in Parallel (Limit to 15 per row to avoid massive API spikes)
+  const [
+    completedShows,
+    favoriteShows,
+    completedMovies,
+    favoriteMovies
+  ] = await Promise.all([
+    Promise.all(completedShowIds.slice(0, 15).map(fetchShowPoster)),
+    Promise.all(favoriteShowIds.slice(0, 15).map(fetchShowPoster)),
+    Promise.all(completedMovieIds.slice(0, 15).map(fetchMoviePoster)),
+    Promise.all(favoriteMovieIds.slice(0, 15).map(fetchMoviePoster))
+  ])
+
+  // Clean nulls
+  const cShows = completedShows.filter(Boolean) as ProfilePoster[]
+  const fShows = favoriteShows.filter(Boolean) as ProfilePoster[]
+  const cMovies = completedMovies.filter(Boolean) as ProfilePoster[]
+  const fMovies = favoriteMovies.filter(Boolean) as ProfilePoster[]
+
+  // Format custom lists
+  const mappedLists: CustomList[] = userListsData.map(list => ({
+    id: list.id,
+    name: list.name,
+    cover_url: list.cover_path || 'https://images.unsplash.com/photo-1604928141064-207cea6f571f?q=80&w=600&auto=format&fit=crop' // Default creepy/atmospheric fallback
+  }))
+
+  // Stats Logic (Keeping the top header logic intact)
+  const { data: episodes } = await supabase.from('user_episodes').select('show_id, watched_at').eq('user_id', user.id).order('watched_at', { ascending: false })
+  const episodeCount = episodes?.length || 0
+  
+  let backdropUrl = ''
+  if (episodes && episodes.length > 0) {
+    try {
+      const showDetails = await getShowDetails(episodes[0].show_id.toString())
+      if (showDetails?.backdrop_path) {
+        backdropUrl = showDetails.backdrop_path.startsWith('http') ? showDetails.backdrop_path : `https://image.tmdb.org/t/p/w1280${showDetails.backdrop_path}`
+      }
+    } catch(e) {}
+  }
+
+  // Social Stats
+  let followingCount = 0; let followersCount = 0; let commentsCount = 0;
+  try {
+    const [{ count: f1 }, { count: f2 }, { count: c1 }] = await Promise.all([
+      supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', user.id),
+      supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', user.id),
+      supabase.from('comments').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+    ])
+    followingCount = f1 || 0; followersCount = f2 || 0; commentsCount = c1 || 0;
+  } catch (e) {}
 
   return (
-    <div className="flex flex-col w-full pb-16">
-      {/* Header with Background */}
-      <div className="relative w-full h-48 bg-[#111111]">
-        {/* Placeholder for banner */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-        
-        <div className="absolute bottom-4 left-4 flex items-center gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img 
-            src={profile?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'} 
-            alt="Avatar" 
-            className="w-16 h-16 rounded-full border-2 border-white object-cover bg-gray-800"
-          />
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-white">{profile?.display_name || user.email?.split('@')[0]}</span>
-            <button className="text-xs font-bold border border-gray-400 rounded-full px-3 py-1 mt-1 w-fit uppercase text-gray-300">
-              Edit
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col w-full pb-16 bg-background min-h-screen overflow-x-hidden">
+      <ProfileHeaderClient 
+        profile={profile} 
+        userEmail={user.email || ''} 
+        backdropUrl={backdropUrl}
+      />
 
       {/* Social Stats */}
-      <div className="flex items-center w-full border-b border-t border-[#1E1E1E] py-4 bg-black">
-        <div className="flex-1 flex flex-col items-center justify-center border-r border-[#1E1E1E]">
-          <span className="text-lg font-bold">1</span>
-          <span className="text-xs text-gray-400">following</span>
+      <div className="flex items-center w-full border-b border-border py-4 bg-background">
+        <div className="flex-1 flex flex-col items-center justify-center border-r border-border">
+          <span className="text-lg font-bold text-foreground">{followingCount}</span>
+          <span className="text-[13px] text-foreground-muted">following</span>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center border-r border-[#1E1E1E]">
-          <span className="text-lg font-bold">0</span>
-          <span className="text-xs text-gray-400">followers</span>
+        <div className="flex-1 flex flex-col items-center justify-center border-r border-border">
+          <span className="text-lg font-bold text-foreground">{followersCount}</span>
+          <span className="text-[13px] text-foreground-muted">followers</span>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center">
-          <span className="text-lg font-bold">17</span>
-          <span className="text-xs text-gray-400">comments</span>
+          <span className="text-lg font-bold text-foreground">{commentsCount}</span>
+          <span className="text-[13px] text-foreground-muted">comments</span>
         </div>
       </div>
 
-      <div className="px-4 py-6 flex flex-col gap-6">
-        {/* Stats Section */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Stats</h2>
-            <span className="text-gray-400">&gt;</span>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {/* TV Time */}
-            <div className="border border-[#2A2A2A] rounded-md bg-black flex flex-col">
-              <div className="flex items-center justify-center gap-2 py-2 border-b border-[#2A2A2A]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
-                <span className="text-sm font-bold">TV time</span>
-              </div>
-              <div className="flex items-center justify-center gap-4 py-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-xl font-bold">{tvMonths}</span>
-                  <span className="text-[10px] text-gray-400">MONTHS</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-xl font-bold">{tvDays}</span>
-                  <span className="text-[10px] text-gray-400">DAYS</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-xl font-bold">{tvHours}</span>
-                  <span className="text-[10px] text-gray-400">HOURS</span>
-                </div>
-              </div>
-            </div>
+      <div className="flex flex-col mt-4">
+        
+        {/* Watch Stats Carousel */}
+        <ProfileStatsCarousel episodeCount={episodeCount} movieCount={completedMovieIds.length} />
 
-            {/* Episodes watched */}
-            <div className="border border-[#2A2A2A] rounded-md bg-black flex flex-col">
-              <div className="flex items-center justify-center gap-2 py-2 border-b border-[#2A2A2A]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                <span className="text-sm font-bold">Episodes watched</span>
-              </div>
-              <div className="flex items-center justify-center py-4 h-full">
-                <span className="text-2xl font-bold">{episodeCount.toLocaleString()}</span>
-              </div>
-            </div>
+        
+        {/* Lists Section */}
+        <ProfileListCarousel title="Lists" lists={mappedLists} />
 
-            {/* Movie Time */}
-            <div className="border border-[#2A2A2A] rounded-md bg-black flex flex-col">
-              <div className="flex items-center justify-center gap-2 py-2 border-b border-[#2A2A2A]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
-                <span className="text-sm font-bold">Movie time</span>
-              </div>
-              <div className="flex items-center justify-center gap-4 py-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-xl font-bold">{mMonths}</span>
-                  <span className="text-[10px] text-gray-400">MONTHS</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-xl font-bold">{mDays}</span>
-                  <span className="text-[10px] text-gray-400">DAYS</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-xl font-bold">{mHours}</span>
-                  <span className="text-[10px] text-gray-400">HOURS</span>
-                </div>
-              </div>
-            </div>
+        {/* Completed Shows Section */}
+        <ProfilePosterCarousel title="Shows" items={cShows} />
 
-            {/* Movies watched */}
-            <div className="border border-[#2A2A2A] rounded-md bg-black flex flex-col">
-              <div className="flex items-center justify-center gap-2 py-2 border-b border-[#2A2A2A]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
-                <span className="text-sm font-bold">Movies watched</span>
-              </div>
-              <div className="flex items-center justify-center py-4 h-full">
-                <span className="text-2xl font-bold">{movieCount.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Favorite Shows Section */}
+        <ProfilePosterCarousel 
+          title="Favorite shows" 
+          icon={<Heart className="text-red-500 fill-red-500" size={24} />} 
+          items={fShows} 
+        />
 
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-4 mt-4">
-          <form action={logout}>
-            <button className="w-full py-3 bg-red-900/20 text-red-400 font-bold rounded-full border border-red-900/50">
-              Log Out
-            </button>
-          </form>
-        </div>
+        {/* Completed Movies Section */}
+        <ProfilePosterCarousel title="Movies" items={cMovies} />
+
+        {/* Favorite Movies Section */}
+        <ProfilePosterCarousel 
+          title="Favorite movies" 
+          icon={<Heart className="text-red-500 fill-red-500" size={24} />} 
+          items={fMovies} 
+        />
+
       </div>
     </div>
   )

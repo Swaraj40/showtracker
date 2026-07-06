@@ -21,7 +21,7 @@ export function TrackButton({ showId, currentStatus }: { showId: number, current
       onClick={handleToggleTrack}
       className={`w-full flex items-center justify-center gap-2 py-3 rounded-full font-bold transition-transform active:scale-95 ${
         isTracked 
-          ? 'bg-[#1E1E1E] text-[#FFD54F] border-2 border-[#1E1E1E]' 
+          ? 'bg-surface-elevated text-[#FFD54F] border-2 border-border' 
           : 'bg-[#FFD54F] text-black'
       }`}
     >

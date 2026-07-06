@@ -33,7 +33,7 @@ export function QuickTrackButton({
       className={`absolute top-4 right-4 w-8 h-8 flex items-center justify-center border-2 rounded-md transition-colors ${
         tracked 
           ? 'border-[#FFD54F] text-black bg-[#FFD54F]' 
-          : 'border-[#FFD54F] text-[#FFD54F] bg-black/50 hover:bg-[#FFD54F] hover:text-black'
+          : 'border-[#FFD54F] text-[#FFD54F] bg-background/50 hover:bg-[#FFD54F] hover:text-black'
       }`}
     >
       {loading ? (

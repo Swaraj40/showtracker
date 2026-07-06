@@ -8,13 +8,13 @@ export default async function SignupPage({
   const params = await searchParams;
   return (
     <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2">
-      <form className="flex-1 flex flex-col w-full justify-center gap-2 text-foreground">
+      <form className="flex-1 flex flex-col w-full justify-center gap-2">
         <h1 className="text-2xl font-bold mb-4">Sign Up</h1>
         <label className="text-md" htmlFor="email">
           Email
         </label>
         <input
-          className="rounded-md px-4 py-2 bg-inherit border mb-6"
+          className="rounded-xl px-4 py-3 bg-white/10 border border-white/20 mb-6 text-white placeholder:text-white/50 focus:outline-none focus:border-[#FFD54F] transition-colors"
           name="email"
           placeholder="you@example.com"
           required
@@ -23,7 +23,7 @@ export default async function SignupPage({
           Password
         </label>
         <input
-          className="rounded-md px-4 py-2 bg-inherit border mb-6"
+          className="rounded-xl px-4 py-3 bg-white/10 border border-white/20 mb-6 text-white placeholder:text-white/50 focus:outline-none focus:border-[#FFD54F] transition-colors"
           type="password"
           name="password"
           placeholder="••••••••"
@@ -31,16 +31,16 @@ export default async function SignupPage({
         />
         <button
           formAction={signup}
-          className="bg-green-600 rounded-md px-4 py-2 text-white mb-2 hover:bg-green-700"
+          className="bg-[#FFD54F] rounded-xl px-4 py-3 text-black font-bold mb-2 hover:bg-[#FFC107] transition-colors active:scale-[0.98]"
         >
-          Sign Up
+          SIGN UP
         </button>
         {params?.message && (
           <p className="mt-4 p-4 bg-red-900/50 text-red-300 text-center rounded-md">
             {params.message}
           </p>
         )}
-        <p className="text-sm text-center mt-4 text-gray-400">
+        <p className="text-sm text-center mt-4 text-gray-300">
           Already have an account?{' '}
           <a href="/login" className="text-blue-500 hover:underline">
             Sign in

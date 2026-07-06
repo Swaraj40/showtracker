@@ -50,7 +50,7 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4 text-center">
         <h1 className="text-2xl font-bold">Your Watchlist is empty</h1>
-        <p className="text-gray-400">Start tracking shows to see them here.</p>
+        <p className="text-foreground-muted">Start tracking shows to see them here.</p>
         <a href="/" className="bg-[#FFD54F] text-black px-6 py-2 rounded-full font-bold mt-4">
           Discover Shows
         </a>
@@ -83,10 +83,22 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
           let nextEp = -1
           let totalUnwatched = 0
 
+          const nextAir = details.next_episode_to_air
+          const isUnreleased = (s: number, e: number) => {
+            if (!nextAir) return false // No upcoming episode -> all existing are released
+            if (s > nextAir.season_number) return true
+            if (s === nextAir.season_number && e >= nextAir.episode_number) return true
+            return false
+          }
+
           for (const season of details.seasons || []) {
             if (season.season_number === 0) continue // skip specials
 
             for (let ep = 1; ep <= season.episode_count; ep++) {
+              if (isUnreleased(season.season_number, ep)) {
+                continue // Skip unreleased episodes entirely
+              }
+              
               if (!watchedSet.has(`${details.id}-${season.season_number}-${ep}`)) {
                 if (nextSeason === -1) {
                   nextSeason = season.season_number
@@ -98,7 +110,7 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
           }
 
           if (nextSeason === -1) {
-            return null // Show is completed
+            return null // Show is completed or only has unreleased episodes
           }
 
           return {
@@ -249,16 +261,16 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
   return (
     <div className="flex flex-col w-full pb-16">
       {/* Top Nav Tabs */}
-      <div className="flex items-center w-full border-b border-[#1E1E1E]">
+      <div className="flex items-center w-full border-b border-border">
         <a 
           href="/shows?tab=watchlist" 
-          className={`flex-1 text-center py-4 text-xs font-bold tracking-widest ${tab === 'watchlist' ? 'text-white border-b-2 border-white' : 'text-gray-500'}`}
+          className={`flex-1 text-center py-4 text-xs font-bold tracking-widest ${tab === 'watchlist' ? 'text-foreground border-b-2 border-white' : 'text-foreground-muted'}`}
         >
           WATCH LIST
         </a>
         <a 
           href="/shows?tab=upcoming" 
-          className={`flex-1 text-center py-4 text-xs font-bold tracking-widest ${tab === 'upcoming' ? 'text-white border-b-2 border-white' : 'text-gray-500'}`}
+          className={`flex-1 text-center py-4 text-xs font-bold tracking-widest ${tab === 'upcoming' ? 'text-foreground border-b-2 border-white' : 'text-foreground-muted'}`}
         >
           UPCOMING
         </a>
@@ -266,7 +278,7 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
 
       <div className="flex justify-between items-center p-4">
         {tab === 'watchlist' ? (
-          <div className="bg-[#1E1E1E] text-gray-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+          <div className="bg-surface-elevated text-foreground-muted text-[10px] font-bold px-3 py-1 rounded-full uppercase">
             Watch Next
           </div>
         ) : (
@@ -281,7 +293,7 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
       <div className="flex flex-col px-2">
         {tab === 'watchlist' ? (
           watchlistRenderData.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">You are completely up to date!</div>
+            <div className="p-8 text-center text-foreground-muted">You are completely up to date!</div>
           ) : (
             watchlistRenderData.map(({ show, nextEpisode }) => (
               <NextEpisodeRow key={show.id} show={show} nextEpisode={nextEpisode} />
@@ -289,12 +301,12 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
           )
         ) : (
           upcomingRenderGroups.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No upcoming episodes for your shows.</div>
+            <div className="p-8 text-center text-foreground-muted">No upcoming episodes for your shows.</div>
           ) : (
             upcomingRenderGroups.map((group) => (
               <div key={group.label} className="flex flex-col">
                 <div className="flex justify-center my-3">
-                  <span className="bg-gray-500/80 text-white text-[11px] font-bold px-4 py-1 rounded-full uppercase tracking-wider">
+                  <span className="bg-gray-500/80 text-foreground text-[11px] font-bold px-4 py-1 rounded-full uppercase tracking-wider">
                     {group.label}
                   </span>
                 </div>

@@ -39,11 +39,11 @@ export default async function AdminPage() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-gray-950 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
-          <h3 className="text-gray-500 mb-2">Total Users</h3>
+          <h3 className="text-foreground-muted mb-2">Total Users</h3>
           <p className="text-4xl font-black">{usersCount || 0}</p>
         </div>
         <div className="bg-white dark:bg-gray-950 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
-          <h3 className="text-gray-500 mb-2">Total Tracked Shows</h3>
+          <h3 className="text-foreground-muted mb-2">Total Tracked Shows</h3>
           <p className="text-4xl font-black">{trackedCount || 0}</p>
         </div>
       </div>
@@ -57,11 +57,11 @@ export default async function AdminPage() {
             <input 
               name="announcement_text"
               defaultValue={announcementConfig?.value?.text || ''}
-              className="w-full bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded px-3 py-2"
+              className="w-full bg-gray-100 dark:bg-surface-elevated border border-gray-300 dark:border-gray-700 rounded px-3 py-2"
               placeholder="Leave blank to disable"
             />
           </div>
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700 w-fit">
+          <button type="submit" className="bg-blue-600 text-foreground px-4 py-2 rounded font-medium hover:bg-blue-700 w-fit">
             Save Configuration
           </button>
         </form>

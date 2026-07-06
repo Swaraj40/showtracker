@@ -1,22 +1,38 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  /* TV Time Dark Theme by default */
-  --background: #111111;
-  --foreground: #ffffff;
-  --surface: #1E1E1E;
-  --surface-hover: #2A2A2A;
+  /* TV Time Light Theme */
+  --background: #f8f9fa;
+  --surface: #ffffff;
+  --surface-elevated: #f1f3f5;
+  --border: #e5e7eb;
+  --foreground: #111827;
+  --foreground-muted: #6b7280;
   
   /* TV Time Yellow */
   --tvtime-yellow: #FFD54F;
   --tvtime-yellow-dark: #FFC107;
 }
 
+:root.dark {
+  /* TV Time Dark Theme */
+  --background: #000000;
+  --surface: #121212;
+  --surface-elevated: #1A1A1A;
+  --border: #222222;
+  --foreground: #ffffff;
+  --foreground-muted: #9ca3af;
+}
+
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --color-surface: var(--surface);
-  --color-surface-hover: var(--surface-hover);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
   --color-primary: var(--tvtime-yellow);
   --color-primary-dark: var(--tvtime-yellow-dark);
   --font-sans: var(--font-geist-sans);
@@ -29,4 +45,22 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   /* Prevent bounce on iOS to feel more native */
   overscroll-behavior-y: none;
+}
+
+@keyframes scrollUp {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+@keyframes scrollDown {
+  0% { transform: translateY(-50%); }
+  100% { transform: translateY(0); }
+}
+
+.animate-scroll-up {
+  animation: scrollUp 40s linear infinite;
+}
+
+.animate-scroll-down {
+  animation: scrollDown 40s linear infinite;
 }

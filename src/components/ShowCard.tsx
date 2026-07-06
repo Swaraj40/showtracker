@@ -25,7 +25,7 @@ export function ShowCard({ show, progress }: ShowCardProps) {
       href={`/show/${show.id || show.show_id}`}
       className="relative flex flex-col rounded-md overflow-hidden transition-transform active:scale-95"
     >
-      <div className="relative aspect-[2/3] w-full bg-[#1E1E1E]">
+      <div className="relative aspect-[2/3] w-full bg-surface-elevated">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img 
           src={posterUrl} 
@@ -36,7 +36,7 @@ export function ShowCard({ show, progress }: ShowCardProps) {
         
         {/* TV Time Progress Bar */}
         {progress && !isCompleted && (
-          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gray-800/80">
+          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-surface-elevated/80">
             <div 
               className="h-full bg-[#FFD54F]" 
               style={{ width: `${Math.min(100, progressPercent)}%` }}
@@ -46,7 +46,7 @@ export function ShowCard({ show, progress }: ShowCardProps) {
 
         {/* TV Time Checkmark Overlay for completed shows */}
         {isCompleted && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+          <div className="absolute inset-0 bg-background/40 flex items-center justify-center">
             <div className="bg-[#FFD54F] rounded-full p-2 text-black shadow-lg">
               <Check size={28} strokeWidth={3} />
             </div>
@@ -56,7 +56,7 @@ export function ShowCard({ show, progress }: ShowCardProps) {
       
       {/* Title only shows if we don't have progress (e.g. Discover page) */}
       {!progress && (
-        <div className="p-2 truncate text-xs font-semibold text-center text-gray-200">
+        <div className="p-2 truncate text-xs font-semibold text-center text-foreground">
           {show.name}
         </div>
       )}

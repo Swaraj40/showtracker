@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getSeasonDetails, TMDBEpisode } from '@/lib/tmdb'
+import { TMDBEpisode } from '@/lib/tmdb'
+import { getSeasonDetailsAction } from './actions'
 import { toggleEpisode } from './actions'
 import { Check } from 'lucide-react'
 
@@ -26,13 +27,13 @@ export function EpisodeItem({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getSeasonDetails(showId, seasonNumber).then(data => {
+    getSeasonDetailsAction(showId, seasonNumber).then(data => {
       setEpisodes(data)
       setLoading(false)
     })
   }, [showId, seasonNumber])
 
-  if (loading) return <div className="text-gray-500 p-4 animate-pulse">Loading episodes...</div>
+  if (loading) return <div className="text-foreground-muted p-4 animate-pulse">Loading episodes...</div>
 
   return (
     <div className="flex flex-col">
@@ -95,25 +96,25 @@ function EpisodeRow({
   return (
     <div 
       onClick={handleToggle}
-      className={`flex items-center justify-between py-3 border-b border-[#1E1E1E] transition-all cursor-pointer hover:bg-white/5 pl-4 pr-4`}
+      className={`flex items-center justify-between py-3 border-b border-border transition-all cursor-pointer hover:bg-white/5 pl-4 pr-4`}
     >
       <div className="flex items-center gap-4 max-w-[70%]">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img 
             src={imageUrl} 
-            className="w-16 h-16 object-cover rounded-md flex-shrink-0 bg-gray-800" 
+            className="w-16 h-16 object-cover rounded-md flex-shrink-0 bg-surface-elevated" 
             alt="Episode thumbnail"
           />
         ) : (
-          <div className="w-16 h-16 rounded-md flex-shrink-0 bg-[#2A2A2A]" />
+          <div className="w-16 h-16 rounded-md flex-shrink-0 bg-surface-elevated" />
         )}
         
         <div className="flex flex-col gap-0.5">
-          <span className="font-bold text-[15px] leading-tight text-white line-clamp-1">
+          <span className="font-bold text-[15px] leading-tight text-foreground line-clamp-1">
             S{String(episode.season_number).padStart(2, '0')} | E{String(episode.episode_number).padStart(2, '0')}
           </span>
-          <span className="text-sm text-gray-400">Episode {episode.episode_number}</span>
+          <span className="text-sm text-foreground-muted">Episode {episode.episode_number}</span>
         </div>
       </div>
       
@@ -124,7 +125,7 @@ function EpisodeRow({
                disabled={loading}
                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                  isWatched 
-                   ? 'bg-[#34D399] text-white' // Green check
+                   ? 'bg-[#34D399] text-foreground' // Green check
                    : 'bg-white text-black' // White/Grey check
                }`}
              >
@@ -132,8 +133,8 @@ function EpisodeRow({
              </button>
           ) : (
              <div className="flex flex-col items-end">
-                <span className="text-xs font-bold text-gray-400">{daysUntil}</span>
-                <span className="text-[10px] font-bold text-gray-500 uppercase">DAYS</span>
+                <span className="text-xs font-bold text-foreground-muted">{daysUntil}</span>
+                <span className="text-[10px] font-bold text-foreground-muted uppercase">DAYS</span>
              </div>
           )}
         </div>

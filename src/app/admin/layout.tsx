@@ -19,12 +19,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gray-100 dark:bg-surface-elevated text-gray-900 dark:text-foreground flex flex-col md:flex-row">
       <aside className="w-full md:w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 p-6 flex flex-col gap-4">
         <h2 className="text-xl font-bold">Admin Panel</h2>
         <nav className="flex flex-col gap-2">
-          <Link href="/admin" className="hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded">Dashboard</Link>
-          <Link href="/" className="hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded text-blue-500">Back to App</Link>
+          <Link href="/admin" className="hover:bg-gray-100 dark:hover:bg-surface-elevated p-2 rounded">Dashboard</Link>
+          <Link href="/" className="hover:bg-gray-100 dark:hover:bg-surface-elevated p-2 rounded text-blue-500">Back to App</Link>
         </nav>
       </aside>
       <main className="flex-1 p-8">
