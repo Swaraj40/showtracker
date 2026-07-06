@@ -402,18 +402,15 @@ export function MovieClient({
             )}
             
             
-            {/* Comments Section */}
-            <div className="border-t border-border mt-4 pt-4">
-              <h3 className="text-foreground-muted text-xs font-bold tracking-widest text-center mb-6">COMMENTS</h3>
-              <CommentsClient 
-                mediaId={movie.id}
-                mediaType="movie"
-                mediaTitle={movie.title}
-                comments={comments}
-                isLoggedIn={!!user}
-                hideHeader={true}
-              />
-            </div>
+            <Link href={`/movies/${movie.id}/comments`} className="block">
+              <div className="px-4 py-6 flex items-center justify-between border-b border-border hover:bg-white/5 transition-colors cursor-pointer">
+                <h3 className="text-foreground font-bold text-lg">Comments</h3>
+                <div className="flex items-center gap-1 text-foreground">
+                  <span>{comments.length}</span>
+                  <ChevronDown size={16} className="-rotate-90" />
+                </div>
+              </div>
+            </Link>
           </motion.div>
         )}
       </AnimatePresence>
