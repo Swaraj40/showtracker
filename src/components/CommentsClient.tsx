@@ -11,13 +11,15 @@ export function CommentsClient({
   mediaType,
   mediaTitle,
   comments,
-  isLoggedIn
+  isLoggedIn,
+  hideHeader = false
 }: {
   mediaId: number
   mediaType: 'movie' | 'show'
   mediaTitle: string
   comments: any[]
   isLoggedIn: boolean
+  hideHeader?: boolean
 }) {
   const router = useRouter()
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false)
@@ -31,19 +33,21 @@ export function CommentsClient({
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground pb-24">
+    <div className={`flex flex-col text-foreground ${hideHeader ? 'pb-8' : 'min-h-screen bg-background pb-24'}`}>
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border">
-        <div className="flex items-center px-4 h-14">
-          <button onClick={() => router.back()} className="p-2 -ml-2 text-foreground">
-            <ChevronLeft size={24} />
-          </button>
-          <div className="flex-1 flex flex-col -ml-4">
-            <span className="text-center font-bold text-[15px] truncate px-8">{mediaTitle}</span>
-            <span className="text-center text-[11px] text-foreground-muted">COMMENTS</span>
+      {!hideHeader && (
+        <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border">
+          <div className="flex items-center px-4 h-14">
+            <button onClick={() => router.back()} className="p-2 -ml-2 text-foreground">
+              <ChevronLeft size={24} />
+            </button>
+            <div className="flex-1 flex flex-col -ml-4">
+              <span className="text-center font-bold text-[15px] truncate px-8">{mediaTitle}</span>
+              <span className="text-center text-[11px] text-foreground-muted">COMMENTS</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Comments List */}
       <div className="flex-1 flex flex-col">
@@ -100,13 +104,28 @@ export function CommentsClient({
         )}
       </div>
 
-      {/* Floating Action Button */}
-      <button 
-        onClick={handleOpenWriteModal}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-[#FFD54F] text-black rounded-full shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-40"
-      >
-        <Edit3 size={24} />
-      </button>
+      {/* Floating Action Button (Only when not embedded) */}
+      {!hideHeader && (
+        <button 
+          onClick={handleOpenWriteModal}
+          className="fixed bottom-24 right-6 w-14 h-14 bg-[#FFD54F] text-black rounded-full shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-40"
+        >
+          <Edit3 size={24} />
+        </button>
+      )}
+
+      {/* Inline Action Button (Only when embedded) */}
+      {hideHeader && (
+        <div className="flex justify-center mt-6">
+          <button 
+            onClick={handleOpenWriteModal}
+            className="flex items-center gap-2 bg-[#FFD54F] text-black px-6 py-3 rounded-full font-bold shadow-lg hover:scale-105 active:scale-95 transition-transform"
+          >
+            <Edit3 size={20} />
+            <span>Write a Comment</span>
+          </button>
+        </div>
+      )}
 
       {/* Write Comment Modal */}
       <WriteCommentModal 

@@ -14,18 +14,20 @@ import { useRouter } from 'next/navigation'
 
 import Link from 'next/link'
 
+import { CommentsClient } from '@/components/CommentsClient'
+
 export function MovieClient({
   movie,
   initialStatus,
   initialIsFavorite,
   user,
-  commentsCount
+  comments
 }: {
   movie: TMDBMovieDetails
   initialStatus: string | null
   initialIsFavorite: boolean
   user: any
-  commentsCount: number
+  comments: any[]
 }) {
   const router = useRouter()
   const supabase = createClient()
@@ -337,7 +339,7 @@ export function MovieClient({
               <div className="px-4 py-6 mb-20 flex items-center justify-between border-b border-border hover:bg-white/5 transition-colors cursor-pointer">
                 <h3 className="text-foreground font-bold text-lg">Comments</h3>
                 <div className="flex items-center gap-1 text-foreground">
-                  <span>{commentsCount}</span>
+                  <span>{comments.length}</span>
                   <ChevronDown size={16} className="-rotate-90" />
                 </div>
               </div>
@@ -399,6 +401,19 @@ export function MovieClient({
               </div>
             )}
             
+            
+            {/* Comments Section */}
+            <div className="border-t border-border mt-4 pt-4">
+              <h3 className="text-foreground-muted text-xs font-bold tracking-widest text-center mb-6">COMMENTS</h3>
+              <CommentsClient 
+                mediaId={movie.id}
+                mediaType="movie"
+                mediaTitle={movie.title}
+                comments={comments}
+                isLoggedIn={!!user}
+                hideHeader={true}
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

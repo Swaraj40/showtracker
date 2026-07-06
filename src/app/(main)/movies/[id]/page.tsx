@@ -28,11 +28,12 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     }
   }
 
-  const { count: commentsCount } = await supabase
+  const { data: comments } = await supabase
     .from('comments')
-    .select('id', { count: 'exact', head: true })
+    .select('*, profiles(display_name, avatar_url)')
     .eq('media_type', 'movie')
     .eq('media_id', movie.id)
+    .order('created_at', { ascending: false })
 
   return (
     <MovieClient 
@@ -40,7 +41,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
       initialStatus={currentStatus} 
       initialIsFavorite={isFavorite} 
       user={user}
-      commentsCount={commentsCount || 0}
+      comments={comments || []}
     />
   )
 }
