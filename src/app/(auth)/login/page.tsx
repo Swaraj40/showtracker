@@ -9,9 +9,8 @@ export default async function LoginPage({
   const params = await searchParams;
   return (
     <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2 mt-12">
-      <OAuthButtons />
-      
       <form className="flex-1 flex flex-col w-full justify-center gap-2">
+        <h1 className="text-2xl font-bold mb-4">Sign In</h1>
         <label className="text-md mt-4" htmlFor="email">
           Email
         </label>
@@ -57,6 +56,8 @@ export default async function LoginPage({
             Sign up
           </a>
         </p>
+
+        <OAuthButtons />
       </form>
     </div>
   )
