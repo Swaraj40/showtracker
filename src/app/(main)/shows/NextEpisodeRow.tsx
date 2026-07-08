@@ -39,7 +39,7 @@ export function NextEpisodeRow({
           setState('done')
         } else {
           setCurrentEp(nextEpData)
-          setState('poll_ready')
+          setState('idle') // Changed from 'poll_ready' to 'idle' to disable survey
         }
       }, 1500) 
     }, 1200)
