@@ -40,18 +40,39 @@ export async function importTvTimeData(fileContent: string, isJson: boolean) {
   if (isJson) {
     try {
       const data = JSON.parse(fileContent)
-      // Attempt to extract from GDPR JSON
-      // TV Time GDPR JSON can be in various formats. A common one has `.data.objects[]` or just an array.
-      const objects = data?.data?.objects || (Array.isArray(data) ? data : [])
+      
+      // Handle various JSON formats
+      let objects: any[] = []
+      
+      // If it's a TV Time GDPR export, sometimes the tracking data is under `tracking` or `seen_episodes`
+      if (Array.isArray(data)) {
+        objects = data
+      } else if (data && data.seen_episodes && Array.isArray(data.seen_episodes)) {
+        objects = data.seen_episodes
+      } else if (data && data.tracking && Array.isArray(data.tracking)) {
+        objects = data.tracking
+      } else if (data?.data?.objects && Array.isArray(data.data.objects)) {
+        objects = data.data.objects
+      } else if (data && typeof data === 'object') {
+        // Just extract all arrays we can find
+        for (const key of Object.keys(data)) {
+          if (Array.isArray(data[key])) {
+            objects = objects.concat(data[key])
+          }
+        }
+      }
       
       for (const obj of objects) {
-        if (obj?.meta?.name) { // typical GDPR format for shows/movies
+        // Look for show name or movie name
+        const title = obj.show_name || obj.movie_name || obj.name || obj.title || obj?.meta?.name
+        
+        if (title) {
           itemsToImport.push({
-            title: obj.meta.name,
-            season: obj.season_number,
-            episode: obj.episode_number,
-            type: obj.meta.type === 'movie' ? 'movie' : 'show',
-            watchedAt: obj.watched_at || new Date().toISOString()
+            title: title,
+            season: obj.season_number || obj.season,
+            episode: obj.episode_number || obj.episode,
+            type: obj.movie_name || obj.meta?.type === 'movie' || obj.type === 'movie' ? 'movie' : 'show',
+            watchedAt: obj.updated_at || obj.watched_at || obj.created_at || new Date().toISOString()
           })
         }
       }
@@ -62,14 +83,22 @@ export async function importTvTimeData(fileContent: string, isJson: boolean) {
     // Parse CSV
     const lines = fileContent.split('\n').map(l => l.trim()).filter(Boolean)
     if (lines.length > 0) {
-      const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase())
+      const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''))
       
-      // Find indexes
-      const titleIdx = headers.findIndex(h => h.includes('title') || h.includes('name'))
+      // Find indexes specifically looking for 'showname' or 'moviename' before 'name'
+      let titleIdx = headers.findIndex(h => h.includes('showname') || h.includes('moviename'))
+      if (titleIdx === -1) titleIdx = headers.findIndex(h => h.includes('title'))
+      if (titleIdx === -1) {
+        // Avoid matching 'episodename' or 'episodetitle' if possible
+        const possibleNameIdx = headers.findIndex(h => h === 'name' || h === 'show')
+        if (possibleNameIdx !== -1) titleIdx = possibleNameIdx
+        else titleIdx = headers.findIndex(h => h.includes('name') && !h.includes('episode'))
+      }
+
       const seasonIdx = headers.findIndex(h => h.includes('season'))
-      const episodeIdx = headers.findIndex(h => h.includes('episode'))
+      const episodeIdx = headers.findIndex(h => h === 'episode' || h === 'episodenumber')
       const typeIdx = headers.findIndex(h => h.includes('type'))
-      const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('watched'))
+      const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('watched') || h.includes('updated'))
 
       if (titleIdx === -1) {
         return { success: false, error: 'Could not find a Title or Show Name column in CSV' }
@@ -85,10 +114,10 @@ export async function importTvTimeData(fileContent: string, isJson: boolean) {
 
         itemsToImport.push({
           title,
-          season: seasonIdx !== -1 ? parseInt(row[seasonIdx]) : undefined,
-          episode: episodeIdx !== -1 ? parseInt(row[episodeIdx]) : undefined,
+          season: seasonIdx !== -1 && row[seasonIdx] ? parseInt(row[seasonIdx]) : undefined,
+          episode: episodeIdx !== -1 && row[episodeIdx] ? parseInt(row[episodeIdx]) : undefined,
           type,
-          watchedAt: dateIdx !== -1 ? new Date(row[dateIdx]).toISOString() : new Date().toISOString()
+          watchedAt: dateIdx !== -1 && row[dateIdx] ? new Date(row[dateIdx]).toISOString() : new Date().toISOString()
         })
       }
     }
