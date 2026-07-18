@@ -25,16 +25,40 @@ export function ImportProgressModal({ file, onClose }: ImportProgressModalProps)
 
   const startImport = async (file: File) => {
     try {
-      setState('unzipping')
-      setProgress({ current: 0, total: 100, message: 'Reading ZIP file...' })
+      let seenEpisodesText = ''
+      let moviesText = ''
 
-      const zip = await JSZip.loadAsync(file)
-      
-      const seenEpisodesFile = zip.file('seen_episodes.csv')
-      const moviesFile = zip.file('movies.csv') // Movies might be named differently, but we'll try 'movies.csv' or 'tracked_movies.csv'
+      if (file.name.endsWith('.zip')) {
+        setState('unzipping')
+        setProgress({ current: 0, total: 100, message: 'Reading ZIP file...' })
+        const zip = await JSZip.loadAsync(file)
+        
+        const seenEpisodesFile = zip.file('seen_episodes.csv')
+        const moviesFile = zip.file('movies.csv') || zip.file('tracked_movies.csv')
 
-      if (!seenEpisodesFile && !moviesFile) {
-        throw new Error('Could not find seen_episodes.csv or movies.csv in the zip file. Are you sure this is a TV Time GDPR export?')
+        if (!seenEpisodesFile && !moviesFile) {
+          throw new Error('Could not find seen_episodes.csv or movies.csv in the zip file. Are you sure this is a TV Time GDPR export?')
+        }
+
+        if (seenEpisodesFile) {
+          seenEpisodesText = await seenEpisodesFile.async('text')
+        }
+        if (moviesFile) {
+          moviesText = await moviesFile.async('text')
+        }
+      } else if (file.name.endsWith('.csv')) {
+        setState('unzipping') // Reuse state for consistency
+        setProgress({ current: 0, total: 100, message: 'Reading CSV file...' })
+        const text = await file.text()
+        
+        // Simple heuristic to determine which CSV it is
+        if (text.includes('tv_show_name') || text.includes('show_name') || text.includes('episode_number')) {
+          seenEpisodesText = text
+        } else if (text.includes('movie_name') || text.toLowerCase().includes('movie')) {
+          moviesText = text
+        } else {
+          throw new Error('This CSV does not look like a TV Time export. It must contain show or movie tracking data.')
+        }
       }
 
       setState('parsing')
@@ -43,9 +67,8 @@ export function ImportProgressModal({ file, onClose }: ImportProgressModalProps)
       const uniqueShows = new Map<string, { season: number, episode: number, date: string }[]>()
       const uniqueMovies = new Map<string, string>() // title -> date
 
-      if (seenEpisodesFile) {
-        const text = await seenEpisodesFile.async('text')
-        Papa.parse(text, {
+      if (seenEpisodesText) {
+        Papa.parse(seenEpisodesText, {
           header: true,
           skipEmptyLines: true,
           step: (results: any) => {
@@ -65,9 +88,8 @@ export function ImportProgressModal({ file, onClose }: ImportProgressModalProps)
         })
       }
 
-      if (moviesFile) {
-        const text = await moviesFile.async('text')
-        Papa.parse(text, {
+      if (moviesText) {
+        Papa.parse(moviesText, {
           header: true,
           skipEmptyLines: true,
           step: (results: any) => {

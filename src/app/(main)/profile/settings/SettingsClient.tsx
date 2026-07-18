@@ -30,8 +30,8 @@ export default function SettingsClient() {
     const file = e.target.files?.[0]
     if (!file) return
     
-    if (!file.name.endsWith('.zip')) {
-      alert('Please select a valid gdpr-data.zip file.')
+    if (!file.name.endsWith('.zip') && !file.name.endsWith('.csv')) {
+      alert('Please select a valid gdpr-data.zip or seen_episodes.csv / movies.csv file.')
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
@@ -101,11 +101,11 @@ export default function SettingsClient() {
 
             <Section title="Data">
               <button onClick={() => fileInputRef.current?.click()} className="w-full text-left">
-                <Row title="Import from TV Time" subtitle="Restore your watch history from a gdpr-data.zip export file" />
+                <Row title="Import from TV Time" subtitle="Restore your watch history from a gdpr-data.zip or .csv export file" />
               </button>
               <input 
                 type="file" 
-                accept=".zip" 
+                accept=".zip,.csv" 
                 ref={fileInputRef} 
                 onChange={handleFileChange} 
                 className="hidden" 
