@@ -19,7 +19,8 @@ export function ProfileHeaderClient({
   isOwner = true,
   isFollowing: initialIsFollowing = false,
   isNotificationsOn: initialIsNotificationsOn = false,
-  profileId
+  profileId,
+  unreadCount = 0
 }: { 
   profile: Profile | null, 
   userEmail: string,
