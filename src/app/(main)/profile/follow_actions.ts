@@ -43,3 +43,24 @@ export async function toggleFollow(followingId: string) {
   revalidatePath('/u/[username]', 'page')
   return !existingFollow
 }
+
+export async function toggleNotifications(followingId: string, currentStatus: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error('Not authenticated')
+  }
+
+  const { error } = await supabase
+    .from('follows')
+    .update({ notifications_enabled: !currentStatus })
+    .eq('follower_id', user.id)
+    .eq('following_id', followingId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return !currentStatus
+}

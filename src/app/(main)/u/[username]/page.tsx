@@ -45,15 +45,19 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
   // Check if current user is following this profile
   let isFollowing = false
+  let isNotificationsOn = false
   if (currentUser) {
     const { data: followData } = await supabase
       .from('follows')
-      .select('follower_id')
+      .select('follower_id, notifications_enabled')
       .eq('follower_id', currentUser.id)
       .eq('following_id', profile.id)
       .single()
     
-    if (followData) isFollowing = true
+    if (followData) {
+      isFollowing = true
+      isNotificationsOn = followData.notifications_enabled || false
+    }
   }
 
   // Fetch all user shows
@@ -149,10 +153,11 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     <div className="flex flex-col min-h-screen pb-20 md:pb-8 w-full bg-background relative overflow-x-hidden">
       <ProfileHeaderClient 
         profile={profile} 
-        userEmail={userEmail} 
-        backdropUrl={backdropUrl || ''} 
+        userEmail={userEmail}
+        backdropUrl={backdropUrl || ''}
         isOwner={isOwner}
         isFollowing={isFollowing}
+        isNotificationsOn={isNotificationsOn}
         profileId={profile.id}
       />
       

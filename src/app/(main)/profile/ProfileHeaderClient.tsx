@@ -18,6 +18,7 @@ export function ProfileHeaderClient({
   backdropUrl,
   isOwner = true,
   isFollowing: initialIsFollowing = false,
+  isNotificationsOn: initialIsNotificationsOn = false,
   profileId
 }: { 
   profile: Profile | null, 
@@ -25,12 +26,15 @@ export function ProfileHeaderClient({
   backdropUrl: string,
   isOwner?: boolean,
   isFollowing?: boolean,
+  isNotificationsOn?: boolean,
   profileId?: string
 }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing)
   const [isFollowLoading, setIsFollowLoading] = useState(false)
+  const [isNotificationsOn, setIsNotificationsOn] = useState(initialIsNotificationsOn || false)
+  const [isNotificationLoading, setIsNotificationLoading] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   
   const handleFollow = async () => {
@@ -40,10 +44,32 @@ export function ProfileHeaderClient({
       const { toggleFollow } = await import('./follow_actions')
       const newStatus = await toggleFollow(profileId)
       setIsFollowing(newStatus)
+      if (newStatus) {
+        setIsNotificationsOn(true) // default to true when following
+      }
     } catch (e) {
       console.error(e)
     } finally {
       setIsFollowLoading(false)
+    }
+  }
+
+  const handleToggleNotification = async () => {
+    if (!profileId || isNotificationLoading) return
+    setIsNotificationLoading(true)
+    // Optimistic update
+    const previousState = isNotificationsOn
+    setIsNotificationsOn(!previousState)
+    
+    try {
+      const { toggleNotifications } = await import('./follow_actions')
+      await toggleNotifications(profileId, previousState)
+    } catch (e) {
+      console.error(e)
+      // Revert on error
+      setIsNotificationsOn(previousState)
+    } finally {
+      setIsNotificationLoading(false)
     }
   }
   
@@ -155,12 +181,15 @@ export function ProfileHeaderClient({
                 >
                   {isFollowLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
                 </button>
-                <button 
-                  onClick={() => alert(isFollowing ? "You will receive notifications for this user's activity!" : "Follow this user first to receive notifications.")}
-                  className="p-1.5 rounded-full border border-white text-white hover:bg-white hover:text-black transition-colors"
-                >
-                  <Bell size={14} className={isFollowing ? "fill-current" : ""} />
-                </button>
+                {isFollowing && (
+                  <button 
+                    onClick={handleToggleNotification}
+                    disabled={isNotificationLoading}
+                    className="p-1.5 rounded-full border border-white text-white hover:bg-white hover:text-black transition-colors disabled:opacity-50"
+                  >
+                    <Bell size={14} className={isNotificationsOn ? "fill-current" : ""} />
+                  </button>
+                )}
               </div>
             )}
           </div>
