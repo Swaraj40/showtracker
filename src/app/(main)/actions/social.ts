@@ -26,7 +26,7 @@ export async function likeComment(commentId: string) {
       user_id: comment.user_id,
       actor_id: user.id,
       type: 'like',
-      metadata: { media_id: comment.media_id, media_type: comment.media_type }
+      metadata: { media_id: comment.media_id, media_type: comment.media_type, comment_id: commentId }
     })
   }
 
@@ -77,7 +77,7 @@ export async function postReply(parentId: string, mediaId: number, mediaType: 'm
       user_id: parentComment.user_id,
       actor_id: user.id,
       type: 'reply',
-      metadata: { media_id: mediaId, media_type: mediaType }
+      metadata: { media_id: mediaId, media_type: mediaType, comment_id: parentId }
     })
   }
 

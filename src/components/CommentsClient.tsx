@@ -239,7 +239,7 @@ export function CommentsClient({
         ) : (
           <div className="flex flex-col divide-y divide-[#222]">
             {topLevelComments.map((comment) => (
-              <div key={comment.id} className="p-4 flex flex-col">
+              <div key={comment.id} id={`comment-${comment.id}`} className="p-4 flex flex-col">
                 <CommentItem
                   comment={comment}
                   replies={getRepliesForComment(comment.id)}
