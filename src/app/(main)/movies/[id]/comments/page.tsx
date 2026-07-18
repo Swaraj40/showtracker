@@ -17,7 +17,7 @@ export default async function MovieCommentsPage({ params }: { params: Promise<{ 
     .from('comments')
     .select(`
       *,
-      profiles (
+      profiles!comments_user_id_fkey (
         display_name,
         avatar_url,
         username

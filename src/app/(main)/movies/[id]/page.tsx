@@ -30,7 +30,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
 
   const { data: comments } = await supabase
     .from('comments')
-    .select('*, profiles(display_name, avatar_url)')
+    .select('*, profiles!comments_user_id_fkey(display_name, avatar_url)')
     .eq('media_type', 'movie')
     .eq('media_id', movie.id)
     .order('created_at', { ascending: false })
