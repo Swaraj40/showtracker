@@ -53,7 +53,7 @@ export default function SettingsClient() {
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background border-b border-surface">
         <div className="flex items-center px-4 h-14">
-          <button onClick={() => router.back()} className="p-2 -ml-2">
+          <button onClick={() => router.push('/profile')} className="p-2 -ml-2">
             <ChevronLeft size={24} />
           </button>
           <h1 className="flex-1 text-center font-bold text-[17px] -ml-8">Settings</h1>
