@@ -136,11 +136,18 @@ export default function SettingsClient() {
             <Section title="Account Settings">
               <Row title="Change Email" hasArrow />
               <Row title="Change Password" hasArrow />
-              <form action={logout}>
-                <button type="submit" className="w-full text-left">
-                  <Row title="Log Out" hasArrow />
-                </button>
-              </form>
+              <button 
+                onClick={async () => {
+                  const { createClient } = await import('@/utils/supabase/client')
+                  const supabase = createClient()
+                  await supabase.auth.signOut()
+                  router.push('/login')
+                  router.refresh()
+                }} 
+                className="w-full text-left"
+              >
+                <Row title="Log Out" hasArrow />
+              </button>
             </Section>
             
             <Section title="Data">
