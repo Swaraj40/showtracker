@@ -15,11 +15,16 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const { data: { user: currentUser } } = await supabase.auth.getUser()
 
   // Fetch the public profile by username or id
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .or(`username.eq.${p.username},id.eq.${p.username}`)
-    .single()
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.username)
+  
+  let query = supabase.from('profiles').select('*')
+  if (isUuid) {
+    query = query.or(`username.eq.${p.username},id.eq.${p.username}`)
+  } else {
+    query = query.eq('username', p.username)
+  }
+
+  const { data: profile, error } = await query.single()
 
   if (!profile || error) {
     return (
