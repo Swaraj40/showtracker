@@ -46,16 +46,22 @@ export function NotificationsClient({ initialNotifications }: { initialNotificat
           link: `/u/${n.actor?.username || ''}`
         }
       case 'like':
+        const likeLink = n.metadata?.media_id 
+          ? (n.metadata.media_type === 'movie' ? `/movies/${n.metadata.media_id}/comments` : `/show/${n.metadata.media_id}/comments`)
+          : '#'
         return {
           icon: <Heart size={18} className="text-red-500 fill-current" />,
           text: <><span className="font-bold">{actorName}</span> liked your comment.</>,
-          link: n.metadata?.comment_id ? '#' : '#' // Would ideally link to the specific media and comment
+          link: likeLink
         }
       case 'reply':
+        const replyLink = n.metadata?.media_id 
+          ? (n.metadata.media_type === 'movie' ? `/movies/${n.metadata.media_id}/comments` : `/show/${n.metadata.media_id}/comments`)
+          : '#'
         return {
           icon: <MessageCircle size={18} className="text-green-400 fill-current" />,
           text: <><span className="font-bold">{actorName}</span> replied to your comment.</>,
-          link: n.metadata?.comment_id ? '#' : '#'
+          link: replyLink
         }
       case 'new_episode':
         return {
