@@ -145,7 +145,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       <ProfileHeaderClient 
         profile={profile} 
         userEmail={userEmail} 
-        backdropUrl={backdropUrl} 
+        backdropUrl={backdropUrl || ''} 
         isOwner={isOwner}
         isFollowing={isFollowing}
         profileId={profile.id}
