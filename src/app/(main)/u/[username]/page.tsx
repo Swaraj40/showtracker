@@ -154,26 +154,20 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       <div className="flex flex-col gap-8 -mt-6 relative z-10 w-full overflow-hidden">
         {/* Stats Row */}
         <ProfileStatsCarousel 
-          totalShows={totalShowsWatched}
-          totalMovies={totalMoviesWatched}
-          episodesWatched={episodesWatched}
+          episodeCount={episodesWatched} 
+          movieCount={totalMoviesWatched} 
         />
 
         {/* Custom Lists (if any) */}
         {userListsData.length > 0 && (
-          <ProfileListCarousel lists={userListsData as CustomList[]} />
+          <ProfileListCarousel lists={userListsData as CustomList[]} title="Lists" />
         )}
 
         {/* Content Rows */}
         <div className="flex flex-col gap-6">
           {allFavorites.length > 0 && (
             <ProfilePosterCarousel 
-              title={
-                <div className="flex items-center gap-2">
-                  <span>Favorites</span>
-                  <Heart size={16} className="fill-red-500 text-red-500" />
-                </div>
-              }
+              title="Favorites"
               items={allFavorites} 
             />
           )}
