@@ -27,7 +27,8 @@ export function ProfileHeaderClient({
   isOwner?: boolean,
   isFollowing?: boolean,
   isNotificationsOn?: boolean,
-  profileId?: string
+  profileId?: string,
+  unreadCount?: number
 }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -103,9 +104,12 @@ export function ProfileHeaderClient({
         {/* Top Icons */}
         {isOwner && (
           <div className="absolute top-4 left-4 z-10">
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg">
+            <Link href="/notifications" className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
               <Bell size={20} className="text-black fill-black" />
-            </div>
+              {(unreadCount && unreadCount > 0) ? (
+                <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-[#FFD54F]" />
+              ) : null}
+            </Link>
           </div>
         )}
         

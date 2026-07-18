@@ -13,6 +13,23 @@ export async function likeComment(commentId: string) {
     .insert({ user_id: user.id, comment_id: commentId })
 
   if (error) throw error
+
+  // Fetch the comment to get the author
+  const { data: comment } = await supabase
+    .from('comments')
+    .select('user_id, media_id, media_type')
+    .eq('id', commentId)
+    .single()
+
+  if (comment && comment.user_id !== user.id) {
+    await supabase.from('notifications').insert({
+      user_id: comment.user_id,
+      actor_id: user.id,
+      type: 'like',
+      metadata: { media_id: comment.media_id, media_type: comment.media_type }
+    })
+  }
+
   revalidatePath('/[...catchall]', 'layout')
 }
 
@@ -47,6 +64,23 @@ export async function postReply(parentId: string, mediaId: number, mediaType: 'm
     })
 
   if (error) throw error
+
+  // Fetch parent comment to notify the author
+  const { data: parentComment } = await supabase
+    .from('comments')
+    .select('user_id')
+    .eq('id', parentId)
+    .single()
+
+  if (parentComment && parentComment.user_id !== user.id) {
+    await supabase.from('notifications').insert({
+      user_id: parentComment.user_id,
+      actor_id: user.id,
+      type: 'reply',
+      metadata: { media_id: mediaId, media_type: mediaType }
+    })
+  }
+
   revalidatePath('/[...catchall]', 'layout')
 }
 

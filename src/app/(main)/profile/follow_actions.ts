@@ -38,6 +38,17 @@ export async function toggleFollow(followingId: string) {
         follower_id: user.id,
         following_id: followingId
       })
+
+    // Notify the user being followed (only if notifications_enabled)
+    // Actually, by default they probably want the notification. The notifications_enabled flag is for the follower receiving notifications about the followingId.
+    // Wait, the new 'notifications_enabled' column we just added is to determine if follower_id receives notifications about following_id's activity.
+    // But when someone follows YOU, you should get a notification regardless, unless there's a global setting. We will just send it.
+    await supabase.from('notifications').insert({
+      user_id: followingId,
+      actor_id: user.id,
+      type: 'follow',
+      metadata: {}
+    })
   }
 
   revalidatePath('/u/[username]', 'page')

@@ -128,15 +128,16 @@ export default async function ProfilePage() {
     } catch(e) {}
   }
 
-  // Social Stats
-  let followingCount = 0; let followersCount = 0; let commentsCount = 0;
+  // Social Stats & Notifications
+  let followingCount = 0; let followersCount = 0; let commentsCount = 0; let unreadCount = 0;
   try {
-    const [{ count: f1 }, { count: f2 }, { count: c1 }] = await Promise.all([
+    const [{ count: f1 }, { count: f2 }, { count: c1 }, { count: n1 }] = await Promise.all([
       supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', user.id),
       supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', user.id),
-      supabase.from('comments').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+      supabase.from('comments').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false)
     ])
-    followingCount = f1 || 0; followersCount = f2 || 0; commentsCount = c1 || 0;
+    followingCount = f1 || 0; followersCount = f2 || 0; commentsCount = c1 || 0; unreadCount = n1 || 0;
   } catch (e) {}
 
   return (
@@ -145,6 +146,7 @@ export default async function ProfilePage() {
         profile={profile} 
         userEmail={user.email || ''} 
         backdropUrl={backdropUrl}
+        unreadCount={unreadCount}
       />
 
       {/* Social Stats */}
