@@ -13,7 +13,7 @@ export default async function MovieCommentsPage({ params }: { params: Promise<{ 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: comments } = await supabase
+  const { data: comments, error } = await supabase
     .from('comments')
     .select(`
       *,
@@ -50,13 +50,20 @@ export default async function MovieCommentsPage({ params }: { params: Promise<{ 
   }))
 
   return (
-    <CommentsClient
-      mediaId={movieId}
-      mediaType="movie"
-      mediaTitle={movie.title}
-      comments={formattedComments}
-      isLoggedIn={!!user}
-      currentUserId={user?.id}
-    />
+    <div className="w-full">
+      {error && (
+        <div className="p-4 bg-red-100 text-red-600 rounded-md m-4">
+          Error loading comments: {error.message || JSON.stringify(error)}
+        </div>
+      )}
+      <CommentsClient
+        mediaId={movieId}
+        mediaType="movie"
+        mediaTitle={movie.title}
+        comments={formattedComments}
+        isLoggedIn={!!user}
+        currentUserId={user?.id}
+      />
+    </div>
   )
 }

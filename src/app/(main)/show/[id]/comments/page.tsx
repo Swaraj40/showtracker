@@ -13,7 +13,7 @@ export default async function ShowCommentsPage({ params }: { params: Promise<{ i
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: comments } = await supabase
+  const { data: comments, error } = await supabase
     .from('comments')
     .select(`
       *,
@@ -50,13 +50,21 @@ export default async function ShowCommentsPage({ params }: { params: Promise<{ i
   }))
 
   return (
-    <CommentsClient
-      mediaId={showId}
-      mediaType="show"
-      mediaTitle={show.name}
-      comments={formattedComments}
-      isLoggedIn={!!user}
-      currentUserId={user?.id}
-    />
+    <div className="w-full">
+      {error && (
+        <div className="p-4 bg-red-100 text-red-600 rounded-md m-4">
+          Error loading comments: {error.message || JSON.stringify(error)}
+        </div>
+      )}
+      <CommentsClient
+        mediaId={showId}
+        mediaType="show"
+        mediaTitle={show.name}
+        comments={formattedComments}
+        isLoggedIn={!!user}
+        currentUserId={user?.id}
+      />
+    </div>
   )
 }
+
