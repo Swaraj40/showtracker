@@ -5,9 +5,6 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { logout } from '@/app/(auth)/actions'
-import { exportLibrary, importLibrary } from './actions'
-import { importTvTimeData } from './tvtime'
-import { useRef } from 'react'
 
 export default function SettingsClient() {
   const router = useRouter()
@@ -24,82 +21,10 @@ export default function SettingsClient() {
     setMounted(true)
   }, [])
 
-  const [isImporting, setIsImporting] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const tvTimeInputRef = useRef<HTMLInputElement>(null)
-
-  const handleExport = async () => {
-    try {
-      const json = await exportLibrary()
-      const blob = new Blob([json], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'showtracker_backup.json'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      alert('Failed to export library')
-    }
-  }
-
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setIsImporting(true)
-    try {
-      const text = await file.text()
-      const res = await importLibrary(text)
-      if (res.success) {
-        alert('Library imported successfully! Changes will appear across the app.')
-      } else {
-        alert('Failed to import library: ' + res.error)
-      }
-    } catch (err) {
-      alert('Invalid file format.')
-    } finally {
-      setIsImporting(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    }
-  }
-
-  const handleTvTimeImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setIsImporting(true)
-    try {
-      const isJson = file.name.endsWith('.json')
-      const text = await file.text()
-      const res = await importTvTimeData(text, isJson)
-      if (res.success) {
-        alert(res.message || 'TV Time Library imported successfully!')
-      } else {
-        alert('Failed to import TV Time library: ' + res.error)
-      }
-    } catch (err: any) {
-      console.error('TV Time Import Error:', err)
-      alert('Failed to process TV Time file: ' + (err.message || 'Unknown error'))
-    } finally {
-      setIsImporting(false)
-      if (tvTimeInputRef.current) tvTimeInputRef.current.value = ''
-    }
-  }
-
   if (!mounted) return null
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-y-auto pb-24 relative">
-      
-      {/* Loading Overlay */}
-      {isImporting && (
-        <div className="absolute inset-0 z-[100] bg-black/80 flex flex-col items-center justify-center">
-          <div className="w-12 h-12 border-4 border-white/20 border-t-[#FFD54F] rounded-full animate-spin mb-4" />
-          <p className="font-bold text-white">Importing Data...</p>
-          <p className="text-sm text-gray-400 mt-2 max-w-[250px] text-center">This can take a minute if you have a lot of TV Time shows!</p>
-        </div>
-      )}
 
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background border-b border-surface">
@@ -148,32 +73,6 @@ export default function SettingsClient() {
               >
                 <Row title="Log Out" hasArrow />
               </button>
-            </Section>
-            
-            <Section title="Data">
-              <button onClick={handleExport} className="w-full text-left">
-                <Row title="Export Library" subtitle="Download a backup of your watched shows and movies" />
-              </button>
-              <button onClick={() => fileInputRef.current?.click()} className="w-full text-left">
-                <Row title="Import Library" subtitle="Restore from a backup file" />
-              </button>
-              <button onClick={() => tvTimeInputRef.current?.click()} className="w-full text-left">
-                <Row title="Import from TV Time" subtitle="Restore from a TV Time CSV or JSON file" />
-              </button>
-              <input 
-                type="file" 
-                accept=".json,.csv" 
-                ref={fileInputRef} 
-                onChange={handleImport} 
-                className="hidden" 
-              />
-              <input 
-                type="file" 
-                accept=".json,.csv" 
-                ref={tvTimeInputRef} 
-                onChange={handleTvTimeImport} 
-                className="hidden" 
-              />
             </Section>
           </div>
         )}
