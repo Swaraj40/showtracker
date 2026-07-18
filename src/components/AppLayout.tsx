@@ -11,7 +11,6 @@ function MobileNav() {
     { name: 'Shows', href: '/shows', icon: Tv },
     { name: 'Movies', href: '/movies', icon: Film },
     { name: 'Discover', href: '/', icon: Compass },
-    { name: 'Alerts', href: '/notifications', icon: Bell },
     { name: 'Profile', href: '/profile', icon: User },
   ]
 
