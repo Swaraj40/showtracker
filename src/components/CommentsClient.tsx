@@ -62,21 +62,21 @@ export function CommentsClient({
             {comments.map((comment) => (
               <div key={comment.id} className="p-4 flex flex-col gap-3">
                 <div className="flex items-start justify-between">
-                  <Link href={`/profile/${comment.user_id}`} className="flex items-center gap-3 group">
+                  <Link href={`/u/${comment.profiles?.username || comment.user_id}`} className="flex items-center gap-3 group">
                     <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-elevated">
                       {comment.profiles?.avatar_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={comment.profiles.avatar_url} alt={comment.profiles.display_name || 'User'} className="w-full h-full object-cover" />
+                        <img src={comment.profiles.avatar_url} alt={comment.profiles.display_name || comment.profiles.username || 'User'} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-surface-elevated text-foreground font-bold">
-                          {(comment.profiles?.display_name || 'U')[0].toUpperCase()}
+                          {(comment.profiles?.display_name || comment.profiles?.username || 'U')[0].toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm group-hover:underline">{comment.profiles?.display_name || 'Anonymous User'}</span>
-                        {comment.profiles?.username && (
+                        <span className="font-bold text-sm group-hover:underline">{comment.profiles?.display_name || (comment.profiles?.username ? `@${comment.profiles.username}` : 'Anonymous User')}</span>
+                        {comment.profiles?.username && comment.profiles?.display_name && (
                           <span className="text-xs text-foreground-muted font-medium">@{comment.profiles.username}</span>
                         )}
                       </div>

@@ -16,16 +16,36 @@ export function ProfileHeaderClient({
   profile, 
   userEmail, 
   backdropUrl,
-  isOwner = true
+  isOwner = true,
+  isFollowing: initialIsFollowing = false,
+  profileId
 }: { 
   profile: Profile | null, 
   userEmail: string,
   backdropUrl: string,
-  isOwner?: boolean
+  isOwner?: boolean,
+  isFollowing?: boolean,
+  profileId?: string
 }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isFollowing, setIsFollowing] = useState(initialIsFollowing)
+  const [isFollowLoading, setIsFollowLoading] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  
+  const handleFollow = async () => {
+    if (!profileId || isFollowLoading) return
+    setIsFollowLoading(true)
+    try {
+      const { toggleFollow } = await import('./follow_actions')
+      const newStatus = await toggleFollow(profileId)
+      setIsFollowing(newStatus)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsFollowLoading(false)
+    }
+  }
   
   const displayName = profile?.display_name || userEmail.split('@')[0]
   const username = profile?.username ? `@${profile.username}` : ''
@@ -115,13 +135,33 @@ export function ProfileHeaderClient({
           <div className="flex flex-col">
             <span className="text-[22px] font-bold text-white drop-shadow-lg tracking-wide leading-tight">{displayName}</span>
             {username && <span className="text-sm font-medium text-white/80 drop-shadow-md mb-1">{username}</span>}
-            {isOwner && (
+            {isOwner ? (
               <button 
                 onClick={() => setIsEditModalOpen(true)}
                 className="text-[11px] font-bold border border-white rounded-full px-5 py-1 mt-1 w-fit uppercase text-white hover:bg-white hover:text-black transition-colors shadow-sm"
               >
                 EDIT
               </button>
+            ) : (
+              <div className="flex items-center gap-2 mt-1">
+                <button 
+                  onClick={handleFollow}
+                  disabled={isFollowLoading}
+                  className={`text-[11px] font-bold border rounded-full px-5 py-1 w-fit uppercase transition-colors shadow-sm ${
+                    isFollowing 
+                      ? 'bg-transparent text-white border-white hover:bg-white/10' 
+                      : 'bg-white text-black border-white hover:bg-gray-200'
+                  }`}
+                >
+                  {isFollowLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
+                </button>
+                <button 
+                  onClick={() => alert(isFollowing ? "You will receive notifications for this user's activity!" : "Follow this user first to receive notifications.")}
+                  className="p-1.5 rounded-full border border-white text-white hover:bg-white hover:text-black transition-colors"
+                >
+                  <Bell size={14} className={isFollowing ? "fill-current" : ""} />
+                </button>
+              </div>
             )}
           </div>
         </div>
