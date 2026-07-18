@@ -19,9 +19,9 @@ export async function checkUsername(username: string): Promise<{ available: bool
     .select('id')
     .eq('username', username)
     .neq('id', user.id) // exclude current user
-    .single()
+    .maybeSingle()
 
-  if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"
+  if (error) {
     console.error('Error checking username:', error)
     return { available: false } // Fail safe
   }
