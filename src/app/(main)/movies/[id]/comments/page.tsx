@@ -21,19 +21,42 @@ export default async function MovieCommentsPage({ params }: { params: Promise<{ 
         display_name,
         avatar_url,
         username
-      )
+      ),
+      likes:comment_likes(count)
     `)
     .eq('media_type', 'movie')
     .eq('media_id', movieId)
     .order('created_at', { ascending: false })
+
+  // Also fetch user's likes for these comments if logged in
+  let userLikedCommentIds = new Set<string>()
+  if (user && comments && comments.length > 0) {
+    const { data: userLikes } = await supabase
+      .from('comment_likes')
+      .select('comment_id')
+      .eq('user_id', user.id)
+      .in('comment_id', comments.map(c => c.id))
+    
+    if (userLikes) {
+      userLikes.forEach(l => userLikedCommentIds.add(l.comment_id))
+    }
+  }
+
+  // Format comments to include like counts and user like status
+  const formattedComments = (comments || []).map(c => ({
+    ...c,
+    likes_count: c.likes?.[0]?.count || 0,
+    user_liked: userLikedCommentIds.has(c.id)
+  }))
 
   return (
     <CommentsClient
       mediaId={movieId}
       mediaType="movie"
       mediaTitle={movie.title}
-      comments={comments || []}
+      comments={formattedComments}
       isLoggedIn={!!user}
+      currentUserId={user?.id}
     />
   )
 }

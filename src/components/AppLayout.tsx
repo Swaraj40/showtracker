@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Tv, Film, Compass, User } from 'lucide-react'
+import { Tv, Film, Compass, User, Bell } from 'lucide-react'
 
 function MobileNav() {
   const pathname = usePathname()
@@ -11,6 +11,7 @@ function MobileNav() {
     { name: 'Shows', href: '/shows', icon: Tv },
     { name: 'Movies', href: '/movies', icon: Film },
     { name: 'Discover', href: '/', icon: Compass },
+    { name: 'Alerts', href: '/notifications', icon: Bell },
     { name: 'Profile', href: '/profile', icon: User },
   ]
 
