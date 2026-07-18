@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { logout } from '@/app/(auth)/actions'
+import { useRef } from 'react'
+import { ImportProgressModal } from './ImportProgressModal'
 
 export default function SettingsClient() {
   const router = useRouter()
@@ -21,10 +23,32 @@ export default function SettingsClient() {
     setMounted(true)
   }, [])
 
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    if (!file.name.endsWith('.zip')) {
+      alert('Please select a valid gdpr-data.zip file.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    setImportFile(file)
+  }
+
+  const closeImportModal = () => {
+    setImportFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   if (!mounted) return null
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-y-auto pb-24 relative">
+      <ImportProgressModal file={importFile} onClose={closeImportModal} />
 
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background border-b border-surface">
@@ -73,6 +97,19 @@ export default function SettingsClient() {
               >
                 <Row title="Log Out" hasArrow />
               </button>
+            </Section>
+
+            <Section title="Data">
+              <button onClick={() => fileInputRef.current?.click()} className="w-full text-left">
+                <Row title="Import from TV Time" subtitle="Restore your watch history from a gdpr-data.zip export file" />
+              </button>
+              <input 
+                type="file" 
+                accept=".zip" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+              />
             </Section>
           </div>
         )}
