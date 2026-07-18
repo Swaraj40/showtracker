@@ -37,9 +37,13 @@ export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalP
     }
   }, [isOpen, profile.avatar_url, profile.username])
 
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+    // allow symbols, but no spaces, and convert to lowercase
+    const val = e.target.value.toLowerCase().replace(/\s/g, '')
     setUsername(val)
+    setSuggestions([])
     
     if (val === profile.username) {
       setUsernameAvailable(null)
@@ -47,7 +51,7 @@ export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalP
       return
     }
 
-    if (val.length < 3) {
+    if (val.length < 4 || val.length > 12) {
       setUsernameAvailable(false)
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       return
@@ -58,8 +62,11 @@ export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalP
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
     timeoutRef.current = setTimeout(async () => {
       try {
-        const available = await checkUsername(val)
-        setUsernameAvailable(available)
+        const result = await checkUsername(val)
+        setUsernameAvailable(result.available)
+        if (result.suggestions) {
+          setSuggestions(result.suggestions)
+        }
       } catch (err) {
         setUsernameAvailable(null)
       } finally {
@@ -180,7 +187,32 @@ export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalP
                     </div>
                   </div>
                   {usernameAvailable === false && (
-                    <p className="text-xs text-red-500 mt-1">Username is not available or too short.</p>
+                    <div className="flex flex-col gap-2 mt-1">
+                      <p className="text-xs text-red-500">
+                        {username.length < 4 || username.length > 12 
+                          ? 'Username must be between 4 and 12 characters.' 
+                          : 'Username is not available.'}
+                      </p>
+                      {suggestions.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="text-xs text-foreground-muted w-full">Suggestions:</span>
+                          {suggestions.map((suggestion, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                setUsername(suggestion)
+                                setUsernameAvailable(true)
+                                setSuggestions([])
+                              }}
+                              className="text-xs bg-surface-elevated hover:bg-surface-hover text-foreground px-2 py-1 rounded-md transition-colors"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 

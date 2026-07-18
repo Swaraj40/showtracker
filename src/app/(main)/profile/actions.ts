@@ -3,15 +3,15 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export async function checkUsername(username: string) {
+export async function checkUsername(username: string): Promise<{ available: boolean, suggestions?: string[] }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) return false
+  if (!user) return { available: false }
   
-  // Basic validation
-  if (!username || username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username)) {
-    return false
+  // Basic validation: 4 to 12 chars, no spaces
+  if (!username || username.length < 4 || username.length > 12 || /\s/.test(username)) {
+    return { available: false }
   }
 
   const { data, error } = await supabase
@@ -23,11 +23,22 @@ export async function checkUsername(username: string) {
 
   if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"
     console.error('Error checking username:', error)
-    return false // Fail safe
+    return { available: false } // Fail safe
   }
 
   // If data exists, the username is taken
-  return !data
+  if (data) {
+    // Generate some suggestions
+    const suggestions = [
+      `${username}${Math.floor(Math.random() * 100)}`,
+      `${username}_${Math.floor(Math.random() * 10)}`,
+      `${username}${new Date().getFullYear().toString().slice(-2)}`
+    ].filter(s => s.length <= 12) // Keep under max length
+    
+    return { available: false, suggestions }
+  }
+
+  return { available: true }
 }
 
 export async function updateProfile(formData: FormData) {
@@ -45,8 +56,8 @@ export async function updateProfile(formData: FormData) {
 
   // Final check on username before updating
   if (username) {
-    const isAvailable = await checkUsername(username)
-    if (!isAvailable) {
+    const result = await checkUsername(username)
+    if (!result.available) {
       throw new Error('Username is not available')
     }
   }
