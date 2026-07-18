@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Camera } from 'lucide-react'
-import { updateProfile } from './actions'
+import { X, Camera, Check, AlertCircle } from 'lucide-react'
+import { updateProfile, checkUsername } from './actions'
 
 type EditProfileModalProps = {
   isOpen: boolean
@@ -12,6 +12,7 @@ type EditProfileModalProps = {
     display_name: string | null
     bio: string | null
     avatar_url: string | null
+    username: string | null
   }
 }
 
@@ -20,20 +21,67 @@ export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalP
   const [error, setError] = useState('')
   const [avatarPreview, setAvatarPreview] = useState(profile.avatar_url || '')
   
+  const [username, setUsername] = useState(profile.username || '')
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false)
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null)
+  
+  // Debounce timeout ref
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   useEffect(() => {
     if (isOpen) {
       setAvatarPreview(profile.avatar_url || '')
+      setUsername(profile.username || '')
+      setUsernameAvailable(null)
+      setError('')
     }
-  }, [isOpen, profile.avatar_url])
+  }, [isOpen, profile.avatar_url, profile.username])
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+    setUsername(val)
+    
+    if (val === profile.username) {
+      setUsernameAvailable(null)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      return
+    }
+
+    if (val.length < 3) {
+      setUsernameAvailable(false)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      return
+    }
+
+    setIsCheckingUsername(true)
+    
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        const available = await checkUsername(val)
+        setUsernameAvailable(available)
+      } catch (err) {
+        setUsernameAvailable(null)
+      } finally {
+        setIsCheckingUsername(false)
+      }
+    }, 500)
+  }
 
   async function handleSubmit(formData: FormData) {
+    if (usernameAvailable === false && username !== profile.username) {
+      setError('Username is not available')
+      return
+    }
+    
     setIsSubmitting(true)
     setError('')
     try {
+      formData.set('username', username)
       await updateProfile(formData)
       onClose()
-    } catch (err) {
-      setError('Failed to update profile. Please try again.')
+    } catch (err: any) {
+      setError(err.message || 'Failed to update profile. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -109,6 +157,33 @@ export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalP
                   />
                 </div>
 
+                <div className="flex flex-col gap-1 relative">
+                  <label htmlFor="username" className="text-xs font-bold text-foreground-muted uppercase tracking-wider">Username</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-foreground-muted font-bold">@</span>
+                    <input
+                      type="text"
+                      id="username"
+                      name="username"
+                      value={username}
+                      onChange={handleUsernameChange}
+                      className="w-full bg-background border border-border rounded-md pl-8 pr-10 py-2 text-foreground focus:outline-none focus:border-[#FFD54F]"
+                    />
+                    <div className="absolute right-3 top-2.5">
+                      {isCheckingUsername ? (
+                        <div className="w-4 h-4 border-2 border-[#FFD54F] border-t-transparent rounded-full animate-spin" />
+                      ) : usernameAvailable === true ? (
+                        <Check size={18} className="text-green-500" />
+                      ) : usernameAvailable === false ? (
+                        <AlertCircle size={18} className="text-red-500" />
+                      ) : null}
+                    </div>
+                  </div>
+                  {usernameAvailable === false && (
+                    <p className="text-xs text-red-500 mt-1">Username is not available or too short.</p>
+                  )}
+                </div>
+
                 <div className="flex flex-col gap-1">
                   <label htmlFor="bio" className="text-xs font-bold text-foreground-muted uppercase tracking-wider">Bio</label>
                   <textarea
@@ -131,7 +206,7 @@ export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalP
                   </button>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || usernameAvailable === false}
                     className="px-6 py-2 rounded-full font-bold text-sm bg-[#FFD54F] text-black hover:bg-[#FFE082] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? 'Saving...' : 'Save'}

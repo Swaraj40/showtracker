@@ -19,7 +19,8 @@ export default async function ShowCommentsPage({ params }: { params: Promise<{ i
       *,
       profiles (
         display_name,
-        avatar_url
+        avatar_url,
+        username
       )
     `)
     .eq('media_type', 'show')

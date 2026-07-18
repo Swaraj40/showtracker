@@ -160,12 +160,14 @@ export default async function DiscoverPage() {
                 <QuickTrackButton showId={item.id} isTracked={item.isTracked} />
               )}
 
-              <div className="absolute bottom-4 left-4 flex flex-col z-10 pr-16">
+              <div className="absolute bottom-4 left-4 flex flex-col z-10 pr-16 text-white">
                 <div className="flex items-center gap-2">
-                  <span className="text-foreground text-xl font-bold tracking-wide drop-shadow-md">{item.title}</span>
+                  <span className="text-white text-xl font-bold tracking-wide drop-shadow-md">{item.title}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-foreground-muted font-semibold mt-1">
-                  <span className="px-2 py-0.5 border border-gray-500 rounded bg-background/40 uppercase text-[10px] tracking-widest">{item.type}</span>
+                <div className="flex items-center gap-2 text-xs text-white/80 font-semibold mt-1">
+                  <span className={`px-2 py-0.5 rounded uppercase text-[10px] tracking-widest font-bold ${item.type === 'tv' ? 'bg-[#FFD54F] text-black' : 'bg-white/20 text-white'}`}>
+                    {item.type === 'tv' ? 'SERIES' : 'MOVIE'}
+                  </span>
                   <span>{item.year}</span>
                   <span>•</span>
                   <span>{item.rating > 0 ? `${item.rating.toFixed(1)} Rating` : 'Unrated'}</span>

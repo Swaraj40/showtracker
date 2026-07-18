@@ -12,7 +12,7 @@ export async function submitComment(formData: FormData) {
   }
 
   const media_type = formData.get('media_type') as string
-  const media_id = parseInt(formData.get('media_id') as string, 10)
+  const media_id = formData.get('media_id') as string
   const rating = formData.get('rating') ? parseInt(formData.get('rating') as string, 10) : null
   const content = formData.get('content') as string
   const photo_url = formData.get('photo_url') as string

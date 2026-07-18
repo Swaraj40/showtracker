@@ -9,6 +9,7 @@ type Profile = {
   display_name: string | null
   bio: string | null
   avatar_url: string | null
+  username: string | null
 }
 
 export function ProfileHeaderClient({ 
@@ -27,6 +28,7 @@ export function ProfileHeaderClient({
   const menuRef = useRef<HTMLDivElement>(null)
   
   const displayName = profile?.display_name || userEmail.split('@')[0]
+  const username = profile?.username ? `@${profile.username}` : ''
   const avatarUrl = profile?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function ProfileHeaderClient({
 
   return (
     <>
-      <div className="relative w-full h-[40vh] min-h-[300px] bg-background">
+      <div className="relative w-full h-[40vh] min-h-[300px] bg-black">
         {/* Banner Image */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img 
@@ -111,7 +113,8 @@ export function ProfileHeaderClient({
             className="w-20 h-20 rounded-full border-[1.5px] border-white object-cover bg-surface shadow-xl"
           />
           <div className="flex flex-col">
-            <span className="text-[22px] font-bold text-white drop-shadow-lg tracking-wide">{displayName}</span>
+            <span className="text-[22px] font-bold text-white drop-shadow-lg tracking-wide leading-tight">{displayName}</span>
+            {username && <span className="text-sm font-medium text-white/80 drop-shadow-md mb-1">{username}</span>}
             {isOwner && (
               <button 
                 onClick={() => setIsEditModalOpen(true)}
@@ -127,7 +130,7 @@ export function ProfileHeaderClient({
       <EditProfileModal 
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        profile={profile || { display_name: null, bio: null, avatar_url: null }}
+        profile={profile || { display_name: null, bio: null, avatar_url: null, username: null }}
       />
     </>
   )

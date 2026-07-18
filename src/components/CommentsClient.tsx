@@ -74,7 +74,12 @@ export function CommentsClient({
                       )}
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-bold text-sm group-hover:underline">{comment.profiles?.display_name || 'Anonymous User'}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm group-hover:underline">{comment.profiles?.display_name || 'Anonymous User'}</span>
+                        {comment.profiles?.username && (
+                          <span className="text-xs text-foreground-muted font-medium">@{comment.profiles.username}</span>
+                        )}
+                      </div>
                       <span className="text-xs text-foreground-muted">
                         {new Date(comment.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                       </span>
