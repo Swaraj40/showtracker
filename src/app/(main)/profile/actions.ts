@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { revalidatePath } from 'next/cache'
 
 export async function checkUsername(username: string): Promise<{ available: boolean, suggestions?: string[] }> {
   const supabase = await createClient()
@@ -54,8 +53,15 @@ export async function updateProfile(formData: FormData) {
   const avatar_url = formData.get('avatar_url') as string
   const username = formData.get('username') as string
 
-  // Final check on username before updating
-  if (username) {
+  // Get current profile to check if username actually changed
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single()
+
+  // Only check username availability if it actually changed
+  if (username && username !== currentProfile?.username) {
     const result = await checkUsername(username)
     if (!result.available) {
       throw new Error('Username is not available')
@@ -83,6 +89,10 @@ export async function updateProfile(formData: FormData) {
     throw new Error(error.code === '23505' ? 'Username is already taken' : 'Failed to update profile')
   }
 
-  revalidatePath('/profile')
-  revalidatePath('/')
+  // Note: We intentionally do NOT call revalidatePath here.
+  // revalidatePath('/profile') triggers a server re-render of the profile page
+  // inside the same action response. The profile page does heavy TMDB API calls
+  // which can fail/timeout, causing the entire action to crash with:
+  // "An error occurred in the Server Components render"
+  // Instead, the client handles refresh via window.location.reload().
 }

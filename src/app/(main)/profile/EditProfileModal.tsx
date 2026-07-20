@@ -91,9 +91,12 @@ export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalP
       if (avatarPreview) {
         formData.set('avatar_url', avatarPreview)
       }
-      await updateProfile(formData)
+      const result = await updateProfile(formData)
       onClose()
+      // Force a full page refresh to show updated data
+      window.location.reload()
     } catch (err: any) {
+      console.error('Profile update error:', err)
       setError(err.message || 'Failed to update profile. Please try again.')
     } finally {
       setIsSubmitting(false)
