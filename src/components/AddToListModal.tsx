@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Plus, ListPlus, Loader2 } from 'lucide-react'
-import { getUserLists, createList, addToList } from '@/app/actions/listActions'
+import { X, Plus, ListPlus, Loader2, Check } from 'lucide-react'
+import { getUserListsWithItemStatus, createList, addToList } from '@/app/actions/listActions'
 
 export function AddToListModal({ 
   isOpen, 
@@ -27,10 +27,7 @@ export function AddToListModal({
   useEffect(() => {
     let isMounted = true;
     if (isOpen) {
-      // Avoid calling setState synchronously during render/effect startup if it causes cascading renders,
-      // though typically this is fine. Alternatively, move setIsLoading(true) out or wrap in setTimeout.
-      // Or just rely on the initial state being true.
-      getUserLists().then(data => {
+      getUserListsWithItemStatus(itemId, mediaType).then(data => {
         if (isMounted) {
           setLists(data)
           setIsLoading(false)
@@ -38,7 +35,7 @@ export function AddToListModal({
       })
     }
     return () => { isMounted = false }
-  }, [isOpen])
+  }, [isOpen, itemId, mediaType])
 
   if (!isOpen) return null
 
@@ -48,7 +45,7 @@ export function AddToListModal({
     setIsCreating(true)
     try {
       const newList = await createList(newListName.trim(), coverPath)
-      setLists([newList, ...lists])
+      setLists([{ ...newList, hasItem: false }, ...lists])
       setNewListName('')
     } finally {
       setIsCreating(false)
@@ -59,7 +56,9 @@ export function AddToListModal({
     setSubmittingId(listId)
     try {
       await addToList(listId, itemId, mediaType)
-      onClose()
+      setLists(prev => prev.map(l => l.id === listId ? { ...l, hasItem: true } : l))
+    } catch (e) {
+      console.error(e)
     } finally {
       setSubmittingId(null)
     }
@@ -120,13 +119,15 @@ export function AddToListModal({
                 {lists.map(list => (
                   <button
                     key={list.id}
-                    onClick={() => handleAddToList(list.id)}
-                    disabled={submittingId === list.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-surface-elevated hover:bg-surface-elevated border border-transparent hover:border-[#3A3A3A] transition-all text-left"
+                    onClick={() => !list.hasItem && handleAddToList(list.id)}
+                    disabled={submittingId === list.id || list.hasItem}
+                    className={`flex items-center justify-between p-4 rounded-xl bg-surface-elevated border transition-all text-left ${list.hasItem ? 'border-transparent opacity-80 cursor-default' : 'hover:bg-surface border-transparent hover:border-[#3A3A3A]'}`}
                   >
                     <span className="font-bold text-foreground text-lg">{list.name}</span>
                     {submittingId === list.id ? (
                       <Loader2 className="animate-spin text-foreground-muted" size={20} />
+                    ) : list.hasItem ? (
+                      <Check className="text-blue-500" size={20} />
                     ) : (
                       <Plus className="text-foreground-muted" size={20} />
                     )}

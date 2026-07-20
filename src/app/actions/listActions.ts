@@ -18,6 +18,29 @@ export async function getUserLists() {
   return lists || []
 }
 
+export async function getUserListsWithItemStatus(itemId: number, mediaType: 'tv' | 'movie') {
+  const lists = await getUserLists()
+  if (lists.length === 0) return []
+
+  const supabase = await createClient()
+  
+  // Find which lists contain this item
+  const { data: items } = await supabase
+    .from('user_list_items')
+    .select('list_id')
+    .eq('item_id', itemId)
+    .eq('media_type', mediaType)
+    .in('list_id', lists.map(l => l.id))
+
+  const listsWithItem = new Set((items || []).map(i => i.list_id))
+
+  return lists.map(list => ({
+    ...list,
+    hasItem: listsWithItem.has(list.id)
+  }))
+}
+
+
 import { getShowDetails, getMovieDetails } from '@/lib/tmdb'
 
 export async function getUserListsWithPosters() {

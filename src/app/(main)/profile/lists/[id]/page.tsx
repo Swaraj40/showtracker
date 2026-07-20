@@ -3,9 +3,10 @@ import ListDetailClient from './ListDetailClient'
 
 export const dynamic = "force-dynamic"
 
-export default async function ListDetailPage({ params }: { params: { id: string } }) {
+export default async function ListDetailPage({ params }: { params: Promise<{ id: string }> }) {
   try {
-    const list = await getListDetailsWithItems(params.id)
+    const resolvedParams = await params;
+    const list = await getListDetailsWithItems(resolvedParams.id)
     return <ListDetailClient list={list as any} />
   } catch (e) {
     return (
