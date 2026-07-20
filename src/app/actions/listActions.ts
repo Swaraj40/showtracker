@@ -67,6 +67,59 @@ export async function getUserListsWithPosters() {
   return listsWithPosters
 }
 
+export async function getListDetailsWithItems(listId: string) {
+  const supabase = await createClient()
+  
+  // Get list info
+  const { data: listData, error: listError } = await supabase
+    .from('user_lists')
+    .select('*')
+    .eq('id', listId)
+    .single()
+
+  if (listError || !listData) throw new Error('List not found')
+
+  // Get items
+  const { data: listItems } = await supabase
+    .from('user_list_items')
+    .select('*')
+    .eq('list_id', listId)
+    .order('created_at', { ascending: false })
+
+  const items = await Promise.all(
+    (listItems || []).map(async (item) => {
+      try {
+        if (item.media_type === 'tv') {
+          const show = await getShowDetails(item.item_id)
+          return {
+            id: item.item_id,
+            media_type: 'tv',
+            name: show?.name || '',
+            poster_path: show?.poster_path || null
+          }
+        } else if (item.media_type === 'movie') {
+          const movie = await getMovieDetails(item.item_id)
+          return {
+            id: item.item_id,
+            media_type: 'movie',
+            name: movie?.title || '',
+            poster_path: movie?.poster_path || null
+          }
+        }
+      } catch (e) {
+        console.error(`Failed to fetch TMDB data for ${item.media_type} ${item.item_id}`, e)
+        return null
+      }
+      return null
+    })
+  )
+
+  return {
+    ...listData,
+    items: items.filter(Boolean)
+  }
+}
+
 export async function createList(name: string, coverPath?: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

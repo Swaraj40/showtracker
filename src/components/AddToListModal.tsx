@@ -25,13 +25,19 @@ export function AddToListModal({
   const [submittingId, setSubmittingId] = useState<string | null>(null)
   
   useEffect(() => {
+    let isMounted = true;
     if (isOpen) {
-      setIsLoading(true)
+      // Avoid calling setState synchronously during render/effect startup if it causes cascading renders,
+      // though typically this is fine. Alternatively, move setIsLoading(true) out or wrap in setTimeout.
+      // Or just rely on the initial state being true.
       getUserLists().then(data => {
-        setLists(data)
-        setIsLoading(false)
+        if (isMounted) {
+          setLists(data)
+          setIsLoading(false)
+        }
       })
     }
+    return () => { isMounted = false }
   }, [isOpen])
 
   if (!isOpen) return null

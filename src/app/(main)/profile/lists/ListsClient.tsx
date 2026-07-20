@@ -67,9 +67,7 @@ export default function ListsClient({ initialLists }: { initialLists: ListWithPo
             <div 
               key={list.id} 
               className="relative w-full h-48 rounded-xl overflow-hidden bg-surface cursor-pointer group"
-              onClick={() => {
-                // Navigate to a specific list page if it existed, e.g., router.push(`/list/${list.id}`)
-              }}
+              onClick={() => router.push(`/profile/lists/${list.id}`)}
             >
               {/* Collage Background */}
               <div className="absolute inset-0 flex">
