@@ -1,73 +1,75 @@
 'use client'
 
+import { motion } from 'framer-motion'
+import { ArrowLeft, Play, LayoutGrid } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft } from 'lucide-react'
-import Image from 'next/image'
 
-type ListItem = {
-  id: number
-  media_type: 'tv' | 'movie'
-  name: string
-  poster_path: string | null
-}
-
-type ListDetailClientProps = {
-  list: {
-    id: string
-    name: string
-    items: ListItem[]
-  }
-}
-
-export default function ListDetailClient({ list }: ListDetailClientProps) {
+export default function ListDetailClient({ list }: { list: any }) {
   const router = useRouter()
+  const items = list.items || []
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground overflow-y-auto pb-24">
+    <div className="min-h-screen bg-background text-foreground pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-background border-b border-surface">
-        <div className="flex items-center px-4 h-14 relative">
-          <button onClick={() => router.back()} className="p-2 -ml-2 absolute left-4 z-10">
-            <ChevronLeft size={24} />
-          </button>
-          <h1 className="flex-1 text-center font-bold text-[17px] truncate px-12">{list.name}</h1>
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => router.push('/profile/lists')}
+              className="p-2 hover:bg-surface-elevated rounded-full transition-colors"
+            >
+              <ArrowLeft size={24} className="text-foreground" />
+            </button>
+            <h1 className="text-xl font-bold text-foreground">{list.name}</h1>
+          </div>
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
-        <h2 className="text-2xl font-black text-white">{list.name}</h2>
-        
-        {list.items.length === 0 ? (
-          <div className="text-center mt-12 text-foreground-muted">
-            This list is empty.
+      <div className="p-4">
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-full bg-surface-elevated flex items-center justify-center mb-4">
+              <LayoutGrid className="text-foreground-muted" size={32} />
+            </div>
+            <h2 className="text-xl font-bold mb-2">No items yet</h2>
+            <p className="text-foreground-muted max-w-sm">
+              You haven't added any shows or movies to this list yet. Go to a show or movie page to add them!
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {list.items.map((item, index) => (
-              <div 
-                key={`${item.media_type}-${item.id}-${index}`}
-                onClick={() => router.push(item.media_type === 'tv' ? `/show/${item.id}` : `/movies/${item.id}`)}
-                className="cursor-pointer group flex flex-col gap-2"
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+            {items.map((item: any) => (
+              <Link 
+                key={item.id} 
+                href={item.media_type === 'movie' ? `/movies/${item.item_id}` : `/show/${item.item_id}`}
               >
-                <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-surface">
+                <motion.div 
+                  whileHover={{ scale: 1.05 }}
+                  className="aspect-[2/3] bg-surface-elevated rounded-xl overflow-hidden relative group cursor-pointer"
+                >
                   {item.poster_path ? (
-                    <Image
+                    <img
                       src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                      alt={item.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 768px) 33vw, 20vw"
+                      alt={item.name || 'Poster'}
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-foreground-muted text-xs text-center p-2">
-                      No Poster
+                    <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center border border-border">
+                      <LayoutGrid className="text-foreground-muted mb-2" size={24} />
+                      <span className="text-xs text-foreground-muted font-medium line-clamp-2">
+                        {item.name}
+                      </span>
                     </div>
                   )}
-                </div>
-                <p className="text-xs font-semibold line-clamp-2 leading-tight">
-                  {item.name}
-                </p>
-              </div>
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-[#FFD54F] flex items-center justify-center pl-1">
+                      <Play className="text-black" size={20} fill="currentColor" />
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
             ))}
           </div>
         )}
