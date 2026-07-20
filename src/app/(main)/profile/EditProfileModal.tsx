@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Camera, Check, AlertCircle } from 'lucide-react'
 import { updateProfile, checkUsername } from './actions'
+import { createClient } from '@/utils/supabase/client'
 
 type EditProfileModalProps = {
   isOpen: boolean
@@ -18,6 +19,7 @@ type EditProfileModalProps = {
 
 export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
   const [avatarPreview, setAvatarPreview] = useState(profile.avatar_url || '')
   
@@ -85,12 +87,50 @@ export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalP
     setError('')
     try {
       formData.set('username', username)
+      // Make sure we submit the uploaded avatar preview if it changed
+      if (avatarPreview) {
+        formData.set('avatar_url', avatarPreview)
+      }
       await updateProfile(formData)
       onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to update profile. Please try again.')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) {
+      return
+    }
+    const file = e.target.files[0]
+    setIsUploading(true)
+    setError('')
+
+    try {
+      const supabase = createClient()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `${fileName}`
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+      setAvatarPreview(publicUrl)
+    } catch (err: any) {
+      setError(err.message || 'Error uploading image')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -130,25 +170,42 @@ export function EditProfileModal({ isOpen, onClose, profile }: EditProfileModalP
                 
                 {/* Avatar URL Input */}
                 <div className="flex flex-col items-center gap-4 py-2">
-                  <div className="relative group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                      src={avatarPreview || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'} 
-                      alt="Avatar Preview" 
-                      className="w-24 h-24 rounded-full border-2 border-border object-cover bg-background"
+                  <div className="relative group cursor-pointer">
+                    <label htmlFor="avatar_upload" className="cursor-pointer relative block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img 
+                        src={avatarPreview || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'} 
+                        alt="Avatar Preview" 
+                        className={`w-24 h-24 rounded-full border-2 border-border object-cover bg-background ${isUploading ? 'opacity-50' : 'group-hover:opacity-75 transition-opacity'}`}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        {isUploading ? (
+                          <div className="w-8 h-8 border-4 border-[#FFD54F] border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" size={32} />
+                        )}
+                      </div>
+                    </label>
+                    <input
+                      type="file"
+                      id="avatar_upload"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isUploading}
+                      className="hidden"
                     />
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 hidden">
                   <label htmlFor="avatar_url" className="text-xs font-bold text-foreground-muted uppercase tracking-wider">Profile Picture URL</label>
                   <input
                     type="url"
                     id="avatar_url"
                     name="avatar_url"
                     placeholder="https://example.com/image.jpg"
-                    defaultValue={profile.avatar_url || ''}
-                    onChange={(e) => setAvatarPreview(e.target.value)}
+                    value={avatarPreview}
+                    readOnly
                     className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:border-[#FFD54F]"
                   />
                 </div>
