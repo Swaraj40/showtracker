@@ -42,7 +42,7 @@ export default function ListDetailClient({ list }: { list: any }) {
             {items.map((item: any) => (
               <div 
                 key={item.id} 
-                onClick={() => router.push(item.media_type === 'movie' ? `/movies/${item.item_id}` : `/show/${item.item_id}`)}
+                onClick={() => router.push(item.media_type === 'movie' ? `/movies/${item.id}` : `/show/${item.id}`)}
                 className="aspect-[2/3] bg-surface-elevated rounded-xl overflow-hidden relative group cursor-pointer hover:scale-[1.05] transition-transform duration-300"
               >
                 {item.poster_path ? (
