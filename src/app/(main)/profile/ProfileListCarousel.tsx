@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 
 export type CustomList = {
@@ -11,15 +12,22 @@ export type CustomList = {
 type ProfileListCarouselProps = {
   title: string
   lists: CustomList[]
+  href?: string
 }
 
-export function ProfileListCarousel({ title, lists }: ProfileListCarouselProps) {
+export function ProfileListCarousel({ title, lists, href }: ProfileListCarouselProps) {
   return (
     <div className="flex flex-col gap-3 mt-4">
-      <div className="flex items-center justify-between px-4">
-        <h2 className="text-xl font-bold text-foreground tracking-wide">{title}</h2>
-        <ChevronRight className="text-foreground-muted" size={20} />
-      </div>
+      {href ? (
+        <Link href={href} className="flex items-center justify-between px-4">
+          <h2 className="text-xl font-bold text-foreground tracking-wide">{title}</h2>
+          <ChevronRight className="text-foreground-muted" size={20} />
+        </Link>
+      ) : (
+        <div className="flex items-center justify-between px-4">
+          <h2 className="text-xl font-bold text-foreground tracking-wide">{title}</h2>
+        </div>
+      )}
       
       <div className="flex overflow-x-auto snap-x snap-mandatory px-4 pb-2 no-scrollbar gap-4 w-full">
         {!lists || lists.length === 0 ? (

@@ -171,9 +171,10 @@ export default async function ProfilePage() {
         <ProfileStatsCarousel episodeCount={episodeCount} movieCount={completedMovieIds.length} />
 
         
-        {/* Lists Section */}
-        <ProfileListCarousel title="Lists" lists={mappedLists} />
-
+        {mappedLists.length > 0 && (
+          <ProfileListCarousel title="Lists" lists={mappedLists} href="/profile/lists" />
+        )}
+        
         {/* Completed Shows Section */}
         <ProfilePosterCarousel title="Shows" items={cShows} />
 
