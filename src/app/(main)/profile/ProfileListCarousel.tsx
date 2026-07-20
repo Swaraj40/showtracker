@@ -36,9 +36,10 @@ export function ProfileListCarousel({ title, lists, href }: ProfileListCarouselP
           </div>
         ) : (
           lists.map((list) => (
-            <div 
+            <Link 
+              href={`/profile/lists/${list.id}`}
               key={list.id} 
-              className="shrink-0 snap-center relative w-[90vw] md:w-[600px] aspect-[2.2/1] rounded-lg overflow-hidden group shadow-md cursor-pointer"
+              className="shrink-0 snap-center relative w-[90vw] md:w-[600px] aspect-[2.2/1] rounded-lg overflow-hidden group shadow-md cursor-pointer block"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
@@ -48,7 +49,7 @@ export function ProfileListCarousel({ title, lists, href }: ProfileListCarouselP
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
               <span className="absolute bottom-3 left-4 text-foreground text-xl font-bold drop-shadow-lg tracking-wide">{list.name}</span>
-            </div>
+            </Link>
           ))
         )}
       </div>
