@@ -40,36 +40,32 @@ export default function ListDetailClient({ list }: { list: any }) {
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
             {items.map((item: any) => (
-              <Link 
+              <div 
                 key={item.id} 
-                href={item.media_type === 'movie' ? `/movies/${item.item_id}` : `/show/${item.item_id}`}
+                onClick={() => router.push(item.media_type === 'movie' ? `/movies/${item.item_id}` : `/show/${item.item_id}`)}
+                className="aspect-[2/3] bg-surface-elevated rounded-xl overflow-hidden relative group cursor-pointer hover:scale-[1.05] transition-transform duration-300"
               >
-                <motion.div 
-                  whileHover={{ scale: 1.05 }}
-                  className="aspect-[2/3] bg-surface-elevated rounded-xl overflow-hidden relative group cursor-pointer"
-                >
-                  {item.poster_path ? (
-                    <img
-                      src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                      alt={item.name || 'Poster'}
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center border border-border">
-                      <LayoutGrid className="text-foreground-muted mb-2" size={24} />
-                      <span className="text-xs text-foreground-muted font-medium line-clamp-2">
-                        {item.name}
-                      </span>
-                    </div>
-                  )}
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-10 h-10 rounded-full bg-[#FFD54F] flex items-center justify-center pl-1">
-                      <Play className="text-black" size={20} fill="currentColor" />
-                    </div>
+                {item.poster_path ? (
+                  <img
+                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                    alt={item.name || 'Poster'}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center border border-border">
+                    <LayoutGrid className="text-foreground-muted mb-2" size={24} />
+                    <span className="text-xs text-foreground-muted font-medium line-clamp-2">
+                      {item.name}
+                    </span>
                   </div>
-                </motion.div>
-              </Link>
+                )}
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-[#FFD54F] flex items-center justify-center pl-1">
+                    <Play className="text-black" size={20} fill="currentColor" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
